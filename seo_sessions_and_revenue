@@ -1,0 +1,115 @@
+
+-- create subset of url to pagetype , in order to reduce distinct joins needed in the subsequent query
+
+
+create view
+stg_seo_translation_view AS
+
+SELECT url,pagetype,subpage_type,rank FROM 
+(
+SELECT
+url,pagetype,subpage_type,value,ROW_NUMBER() OVER (PARTITION BY url ORDER BY value desc, subpage_type asc) rank
+FROM
+(
+SELECT url, pagetype,subpage_type,count(*) as value 
+FROM  stg_analytics.pma.stg_seo_translation 
+WHERE pagetype !='unknown' 
+AND etl_load_date = (select max(etl_load_date) from stg_analytics.pma.stg_seo_translation)
+GROUP BY 1,2,3
+) a 
+) a
+WHERE rank=1
+
+;
+
+--generate table that combines sessions + revenue data
+
+DROP TABLE if exists seo_analytics_page_performance;
+CREATE VIEW seo_analytics_page_performance as
+SELECT 
+date(timestamp) date
+,REPLACE(CONCAT(LEFT(landingpage,regexp_instr(landingpage,'/',9)-1),'/'),'http:','https:') as domain
+,pagetype
+,case when pagetype IN ('poi','location') THEN 'location' else pagetype END as pagetype_amended
+,subpage_type
+,case 
+    when landingpage LIKE '%opentable.com.mx%' THEN 'MX'
+    when landingpage LIKE '%opentable.com.au%' THEN 'AU'
+    when landingpage LIKE '%opentable.ca%' THEN 'CA'
+    when landingpage LIKE '%opentable.co.uk%' THEN 'UK'
+    when landingpage LIKE '%opentable.com%' THEN 'US'
+    when landingpage LIKE '%opentable.de%' THEN 'DE'
+    when landingpage LIKE '%opentable.ie%' THEN 'IE'
+    
+    ELSE 'other'
+    END as country
+
+    ,case 
+when landingpage LIKE '%opentable.com.mx/' THEN 'Brand'
+when landingpage LIKE '%opentable.com.au/' THEN 'Brand'
+when landingpage LIKE '%opentable.ca/' THEN 'Brand'
+when landingpage LIKE '%opentable.co.uk/' THEN 'Brand'
+when landingpage LIKE '%opentable.com/' THEN 'Brand'
+when landingpage LIKE '%opentable.de/' THEN 'Brand'
+when landingpage LIKE '%opentable.ie/' THEN 'Brand'
+
+ELSE 'nonbrand'
+END as brand_nonbrand
+,count(distinct a.sessionid) as sessions
+,count(distinct res_id) as bookgs
+,sum(billablesize) as covers
+,sum(transaction_revenue_usd) as revenue_usd
+
+FROM deg..t_sessionstart_interaction_web a
+LEFT JOIN stg_seo_translation_view  c on c.url= CONCAT('/',RIGHT(landingpage,length(landingpage)-regexp_instr(landingpage,'/',9)))
+LEFT JOIN analytics..fct_reservation b on a.sessionid=b.sessionid
+
+WHERE date(timestamp) >= '2019-01-01' 
+    and referrer like '%www.google%' 
+    and referrer NOT LIKE '%android%' 
+    and referrer not like '%q=testing%'
+    AND landingpage NOT like '%gclid%' 
+    and landingpage NOT LIKE '%q=testing%'
+    and landingpage NOT LIKE '%/widget/reservation%'
+    and app_name != 'OpenTable' 
+    and platform in ('mobile-web','web')
+    
+GROUP BY 1,2,3,4,5,6,7 
+
+;
+
+--detailed export
+SELECT 
+to_date(dateadd(day,date_part(weekday,date)*-1+7,date)) as week
+, domain
+, pagetype
+, pagetype_amended
+, subpage_type
+, country
+, brand_nonbrand
+, sum(sessions) sessions
+, sum(bookgs) bookings
+, sum(covers) covers
+, sum(revenue_usd) revenue_usd
+
+FROM seo_analytics_page_performance
+GROUP BY 1,2,3,4,5,6,7
+ORDER BY 1 desc
+
+--simple export
+;
+SELECT 
+to_date(dateadd(day,date_part(weekday,date)*-1+7,date)) as week
+, pagetype
+, country
+, sum(sessions) sessions
+, sum(bookgs) bookings
+, sum(covers) covers
+, sum(revenue_usd) revenue_usd
+
+FROM seo_analytics_page_performance
+GROUP BY 1,2,3
+ORDER BY 1 desc
+
+;;
+
