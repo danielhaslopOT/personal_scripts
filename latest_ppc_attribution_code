@@ -1,0 +1,921 @@
+
+--Would be good to include above this line the script that generates sem_dev.f_opentable_paid_sessions_detailed for clarity over how we filter for SEM, how we adjust the landing pages , and how use regex to pull the variables out of the landing page.
+
+
+DROP TABLE IF EXISTS sem_scratchbook.dhaslop_0d_revenue_history_detailed;
+CREATE TABLE sem_scratchbook.dhaslop_0d_revenue_history_detailed AS
+
+SELECT 
+        datemade as date
+        ,adgroup_id
+        ,keyword_id
+        ,campaign_id
+        ,ref_id
+        ,case when device_platform='PC' then 'desktop' else 'mobile' END as device
+        ,lower(case when a.country='UK' THEN 'GB' else a.country END) country
+        ,session_channel
+        ,'0d' as payback_window
+        ,count(*) as gross_bookings
+        ,sum(revenue_usd) as gross_revenue_usd
+        ,sum(billablesize) as gross_covers
+        
+        
+FROM sem_dev.f_opentable_paid_sessions_detailed b
+JOIN pma.f_opentable_fct_reservation a on a.sessionid=b.sessionid 
+WHERE datemade >='2019-01-01'
+GROUP BY 1,2,3,4,5,6,7,8
+
+
+
+;
+
+--
+-- 
+--DROP TABLE IF EXISTS sem_dev.dhaslop_3d_revenue_history_detailed;
+--CREATE TABLE sem_dev.dhaslop_3d_revenue_history_detailed AS
+--
+--SELECT
+--  date
+--  ,a.adgroup_id
+--  ,a.keyword_id
+--  ,a.campaign_id
+--  ,a.ref_id  
+--  ,a.platform as device
+--  ,a.country
+--  ,a.channel as session_channel
+--  ,'3d' as payback_window
+--  ,coalesce(count(1),0) gross_bookings
+--  ,sum(revenue_usd) gross_revenue_usd
+--  ,sum(billablesize) gross_covers
+--  
+--FROM 
+--(
+--        SELECT
+--        *
+--        , row_number() OVER (PARTITION BY datemade_utc, sessionid, rid, resid order by datediff(second, visitstarttime, datemade_timestamp_utc) ASC) attribution_priority 
+--        
+--        FROM 
+--        (
+--        SELECT 
+--           c.anonymousid_match,
+--           c.gpid_match,
+--           c.date,
+--           c.adgroup_id,
+--           c.keyword_id,
+--           c.campaign_id,
+--           c.ref_id,
+--           CASE WHEN c.platform ='web' THEN 'desktop' ELSE 'mobile' END as platform,
+--           case 
+--                when c.channel = 'paid search restaurants' THEN 'Paid Search - Restaurant'
+--                when c.channel = 'paid search brand' THEN 'Paid Search - Brand'
+--                when c.channel = 'paid search nonbrand' THEN 'Paid Search - Nonbrand' 
+--                ELSE 'Paid Search - Nonbrand' 
+--           END as channel,
+--           c.country,
+--           c.visitstarttime,
+--           r.sessionid,
+--           r.revenue_usd,
+--           r.billablesize,
+--           r.datemade_utc,
+--           r.datemade_timestamp_utc,
+--           r.rid,
+--           r.resid,
+--           r.shiftdate,
+--           CASE WHEN isbillableorpending = 0 THEN 0 ELSE revenue_usd END seated_revenue_usd,
+--           CASE WHEN isbillableorpending = 0 THEN 0 ELSE 1 END seated_booking,
+--           CASE WHEN isbillableorpending = 0 THEN 0 ELSE billablesize END seated_covers,
+--           CASE WHEN c.sessionid = r.sessionid then -1 ELSE floor(datediff(second, c.date, r.datemade_utc)/86400) END cohort_age
+--           FROM sem_dev.f_opentable_paid_sessions_detailed c
+--           JOIN pma.f_opentable_fct_reservation r  ON c.anonymousid_match = r.anonymousid  AND datediff(second, c.visitstarttime, r.datemade_timestamp_utc) BETWEEN 0 and 60 * 60 * 24 * 3
+--           WHERE (c.date>='2019-01-01' )
+--        
+--        UNION ALL
+--        
+--           SELECT 
+--           c.anonymousid_match,
+--           c.gpid_match,
+--           c.date,
+--           c.adgroup_id,
+--           c.keyword_id,
+--           c.campaign_id,
+--           c.ref_id,
+--           CASE WHEN c.platform ='web' THEN 'desktop' ELSE 'mobile' END as platform,
+--           case 
+--                when c.channel = 'paid search restaurants' THEN 'Paid Search - Restaurant'
+--                when c.channel = 'paid search brand' THEN 'Paid Search - Brand'
+--                when c.channel = 'paid search nonbrand' THEN 'Paid Search - Nonbrand' 
+--                ELSE 'Paid Search - Nonbrand' 
+--           END as channel,
+--           c.country,
+--           c.visitstarttime,
+--           r.sessionid,
+--           r.revenue_usd,
+--           r.billablesize,
+--           r.datemade_utc,
+--           r.datemade_timestamp_utc,
+--           r.rid,
+--           r.resid,
+--           r.shiftdate,
+--           CASE WHEN isbillableorpending = 0 THEN 0 ELSE revenue_usd END seated_revenue_usd,
+--           CASE WHEN isbillableorpending = 0 THEN 0 ELSE 1 END seated_booking,
+--           CASE WHEN isbillableorpending = 0 THEN 0 ELSE billablesize END seated_covers,
+--           CASE WHEN c.sessionid = r.sessionid then -1 ELSE floor(datediff(second, c.date, r.datemade_utc)/86400) END cohort_age
+--           FROM sem_dev.f_opentable_paid_sessions_detailed c
+--           JOIN pma.f_opentable_fct_reservation r  ON c.gpid_match = r.gpid AND datediff(second, c.visitstarttime, r.datemade_timestamp_utc) BETWEEN 0 and 60 * 60 * 24 * 3  
+--           AND c.gpid_match IS NOT NULL  AND r.gpid IS NOT NULL
+--           WHERE  (c.date>='2019-01-01') 
+--           ) a
+--           ) a
+--
+--   WHERE   attribution_priority = 1
+--   GROUP BY 1,2,3,4,5,6,7,8,9;
+
+;
+
+
+ 
+DROP TABLE IF EXISTS sem_scratchbook.dhaslop_7d_revenue_history_detailed;
+CREATE TABLE sem_scratchbook.dhaslop_7d_revenue_history_detailed AS
+
+SELECT
+  date
+  ,a.adgroup_id
+  ,a.keyword_id
+  ,a.campaign_id
+  ,a.ref_id  
+  ,a.platform as device
+  ,a.country
+  ,a.channel as session_channel
+  ,'7d' as payback_window
+  ,coalesce(count(1),0) gross_bookings
+  ,sum(revenue_usd) gross_revenue_usd
+  ,sum(billablesize) gross_covers
+  
+FROM 
+(
+        SELECT
+        *
+        , row_number() OVER (PARTITION BY datemade_utc, sessionid, rid, resid order by datediff(second, visitstarttime, datemade_timestamp_utc) ASC) attribution_priority 
+        
+        FROM 
+        (
+        SELECT 
+           c.anonymousid_match,
+           c.gpid_match,
+           c.date,
+           c.adgroup_id,
+           c.keyword_id,
+           c.campaign_id,
+           c.ref_id,
+           CASE WHEN c.platform ='web' THEN 'desktop' ELSE 'mobile' END as platform,
+           case 
+                when c.channel = 'paid search restaurants' THEN 'Paid Search - Restaurant'
+                when c.channel = 'paid search brand' THEN 'Paid Search - Brand'
+                when c.channel = 'paid search nonbrand' THEN 'Paid Search - Nonbrand' 
+                ELSE 'Paid Search - Nonbrand' 
+           END as channel,
+           c.country,
+           c.visitstarttime,
+           r.sessionid,
+           r.revenue_usd,
+           r.billablesize,
+           r.datemade_utc,
+           r.datemade_timestamp_utc,
+           r.rid,
+           r.resid,
+           r.shiftdate,
+           CASE WHEN isbillableorpending = 0 THEN 0 ELSE revenue_usd END seated_revenue_usd,
+           CASE WHEN isbillableorpending = 0 THEN 0 ELSE 1 END seated_booking,
+           CASE WHEN isbillableorpending = 0 THEN 0 ELSE billablesize END seated_covers,
+           CASE WHEN c.sessionid = r.sessionid then -1 ELSE floor(datediff(second, c.date, r.datemade_utc)/86400) END cohort_age
+           FROM sem_dev.f_opentable_paid_sessions_detailed c
+           JOIN pma.f_opentable_fct_reservation r  ON c.anonymousid_match = r.anonymousid  AND datediff(second, c.visitstarttime, r.datemade_timestamp_utc) BETWEEN 0 and 60 * 60 * 24 * 7
+           WHERE (c.date>='2019-01-01' )
+        
+        UNION ALL
+        
+           SELECT 
+           c.anonymousid_match,
+           c.gpid_match,
+           c.date,
+           c.adgroup_id,
+           c.keyword_id,
+           c.campaign_id,
+           c.ref_id,
+           CASE WHEN c.platform ='web' THEN 'desktop' ELSE 'mobile' END as platform,
+           case 
+                when c.channel = 'paid search restaurants' THEN 'Paid Search - Restaurant'
+                when c.channel = 'paid search brand' THEN 'Paid Search - Brand'
+                when c.channel = 'paid search nonbrand' THEN 'Paid Search - Nonbrand' 
+                ELSE 'Paid Search - Nonbrand' 
+           END as channel,
+           c.country,
+           c.visitstarttime,
+           r.sessionid,
+           r.revenue_usd,
+           r.billablesize,
+           r.datemade_utc,
+           r.datemade_timestamp_utc,
+           r.rid,
+           r.resid,
+           r.shiftdate,
+           CASE WHEN isbillableorpending = 0 THEN 0 ELSE revenue_usd END seated_revenue_usd,
+           CASE WHEN isbillableorpending = 0 THEN 0 ELSE 1 END seated_booking,
+           CASE WHEN isbillableorpending = 0 THEN 0 ELSE billablesize END seated_covers,
+           CASE WHEN c.sessionid = r.sessionid then -1 ELSE floor(datediff(second, c.date, r.datemade_utc)/86400) END cohort_age
+           FROM sem_dev.f_opentable_paid_sessions_detailed c
+           JOIN pma.f_opentable_fct_reservation r  ON c.gpid_match = r.gpid AND datediff(second, c.visitstarttime, r.datemade_timestamp_utc) BETWEEN 0 and 60 * 60 * 24 * 7  
+           AND c.gpid_match IS NOT NULL  AND r.gpid IS NOT NULL
+           WHERE  (c.date>='2019-01-01') 
+           ) a
+           ) a
+
+   WHERE   attribution_priority = 1
+   GROUP BY 1,2,3,4,5,6,7,8,9;
+
+
+;
+
+/*
+ 
+DROP TABLE IF EXISTS sem_dev.dhaslop_14d_revenue_history_detailed;
+CREATE TABLE sem_dev.dhaslop_14d_revenue_history_detailed AS
+
+SELECT
+  date
+  ,a.adgroup_id
+  ,a.keyword_id
+  ,a.campaign_id
+  ,a.ref_id  
+  ,a.platform as device
+  ,a.country
+  ,a.channel as session_channel
+  ,'14d' as payback_window
+  ,coalesce(count(1),0) gross_bookings
+  ,sum(revenue_usd) gross_revenue_usd
+  ,sum(billablesize) gross_covers
+  
+FROM 
+(
+        SELECT
+        *
+        , row_number() OVER (PARTITION BY datemade_utc, sessionid, rid, resid order by datediff(second, visitstarttime, datemade_timestamp_utc) ASC) attribution_priority 
+        
+        FROM 
+        (
+        SELECT 
+           c.anonymousid_match,
+           c.gpid_match,
+           c.date,
+           c.adgroup_id,
+           c.keyword_id,
+           c.campaign_id,
+           c.ref_id,
+           CASE WHEN c.platform ='web' THEN 'desktop' ELSE 'mobile' END as platform,
+           case 
+                when c.channel = 'paid search restaurants' THEN 'Paid Search - Restaurant'
+                when c.channel = 'paid search brand' THEN 'Paid Search - Brand'
+                when c.channel = 'paid search nonbrand' THEN 'Paid Search - Nonbrand' 
+                ELSE 'Paid Search - Nonbrand' 
+           END as channel,
+           c.country,
+           c.visitstarttime,
+           r.sessionid,
+           r.revenue_usd,
+           r.billablesize,
+           r.datemade_utc,
+           r.datemade_timestamp_utc,
+           r.rid,
+           r.resid,
+           r.shiftdate,
+           CASE WHEN isbillableorpending = 0 THEN 0 ELSE revenue_usd END seated_revenue_usd,
+           CASE WHEN isbillableorpending = 0 THEN 0 ELSE 1 END seated_booking,
+           CASE WHEN isbillableorpending = 0 THEN 0 ELSE billablesize END seated_covers,
+           CASE WHEN c.sessionid = r.sessionid then -1 ELSE floor(datediff(second, c.date, r.datemade_utc)/86400) END cohort_age
+           FROM sem_dev.f_opentable_paid_sessions_detailed c
+           JOIN pma.f_opentable_fct_reservation r  ON c.anonymousid_match = r.anonymousid  AND datediff(second, c.visitstarttime, r.datemade_timestamp_utc) BETWEEN 0 and 60 * 60 * 24 * 14
+           WHERE (c.date>='2021-01-01' )
+        
+        UNION ALL
+        
+           SELECT 
+           c.anonymousid_match,
+           c.gpid_match,
+           c.date,
+           c.adgroup_id,
+           c.keyword_id,
+           c.campaign_id,
+           c.ref_id,
+           CASE WHEN c.platform ='web' THEN 'desktop' ELSE 'mobile' END as platform,
+           case 
+                when c.channel = 'paid search restaurants' THEN 'Paid Search - Restaurant'
+                when c.channel = 'paid search brand' THEN 'Paid Search - Brand'
+                when c.channel = 'paid search nonbrand' THEN 'Paid Search - Nonbrand' 
+                ELSE 'Paid Search - Nonbrand' 
+           END as channel,
+           c.country,
+           c.visitstarttime,
+           r.sessionid,
+           r.revenue_usd,
+           r.billablesize,
+           r.datemade_utc,
+           r.datemade_timestamp_utc,
+           r.rid,
+           r.resid,
+           r.shiftdate,
+           CASE WHEN isbillableorpending = 0 THEN 0 ELSE revenue_usd END seated_revenue_usd,
+           CASE WHEN isbillableorpending = 0 THEN 0 ELSE 1 END seated_booking,
+           CASE WHEN isbillableorpending = 0 THEN 0 ELSE billablesize END seated_covers,
+           CASE WHEN c.sessionid = r.sessionid then -1 ELSE floor(datediff(second, c.date, r.datemade_utc)/86400) END cohort_age
+           FROM sem_dev.f_opentable_paid_sessions_detailed c
+           JOIN pma.f_opentable_fct_reservation r  ON c.gpid_match = r.gpid AND datediff(second, c.visitstarttime, r.datemade_timestamp_utc) BETWEEN 0 and 60 * 60 * 24 * 14  
+           AND c.gpid_match IS NOT NULL  AND r.gpid IS NOT NULL
+           WHERE  (c.date>='2021-01-01') 
+           ) a
+           ) a
+
+   WHERE   attribution_priority = 1
+   GROUP BY 1,2,3,4,5,6,7,8,9;
+
+
+;
+
+
+ 
+DROP TABLE IF EXISTS sem_dev.dhaslop_21d_revenue_history_detailed;
+CREATE TABLE sem_dev.dhaslop_21d_revenue_history_detailed AS
+
+SELECT
+  date
+  ,a.adgroup_id
+  ,a.keyword_id
+  ,a.campaign_id
+  ,a.ref_id  
+  ,a.platform as device
+  ,a.country
+  ,a.channel as session_channel
+  ,'21d' as payback_window
+  ,coalesce(count(1),0) gross_bookings
+  ,sum(revenue_usd) gross_revenue_usd
+  ,sum(billablesize) gross_covers
+  
+FROM 
+(
+        SELECT
+        *
+        , row_number() OVER (PARTITION BY datemade_utc, sessionid, rid, resid order by datediff(second, visitstarttime, datemade_timestamp_utc) ASC) attribution_priority 
+        
+        FROM 
+        (
+        SELECT 
+           c.anonymousid_match,
+           c.gpid_match,
+           c.date,
+           c.adgroup_id,
+           c.keyword_id,
+           c.campaign_id,
+           c.ref_id,
+           CASE WHEN c.platform ='web' THEN 'desktop' ELSE 'mobile' END as platform,
+           case 
+                when c.channel = 'paid search restaurants' THEN 'Paid Search - Restaurant'
+                when c.channel = 'paid search brand' THEN 'Paid Search - Brand'
+                when c.channel = 'paid search nonbrand' THEN 'Paid Search - Nonbrand' 
+                ELSE 'Paid Search - Nonbrand' 
+           END as channel,
+           c.country,
+           c.visitstarttime,
+           r.sessionid,
+           r.revenue_usd,
+           r.billablesize,
+           r.datemade_utc,
+           r.datemade_timestamp_utc,
+           r.rid,
+           r.resid,
+           r.shiftdate,
+           CASE WHEN isbillableorpending = 0 THEN 0 ELSE revenue_usd END seated_revenue_usd,
+           CASE WHEN isbillableorpending = 0 THEN 0 ELSE 1 END seated_booking,
+           CASE WHEN isbillableorpending = 0 THEN 0 ELSE billablesize END seated_covers,
+           CASE WHEN c.sessionid = r.sessionid then -1 ELSE floor(datediff(second, c.date, r.datemade_utc)/86400) END cohort_age
+           FROM sem_dev.f_opentable_paid_sessions_detailed c
+           JOIN pma.f_opentable_fct_reservation r  ON c.anonymousid_match = r.anonymousid  AND datediff(second, c.visitstarttime, r.datemade_timestamp_utc) BETWEEN 0 and 60 * 60 * 24 * 21
+           WHERE (c.date>='2021-01-01' )
+        
+        UNION ALL
+        
+           SELECT 
+           c.anonymousid_match,
+           c.gpid_match,
+           c.date,
+           c.adgroup_id,
+           c.keyword_id,
+           c.campaign_id,
+           c.ref_id,
+           CASE WHEN c.platform ='web' THEN 'desktop' ELSE 'mobile' END as platform,
+           case 
+                when c.channel = 'paid search restaurants' THEN 'Paid Search - Restaurant'
+                when c.channel = 'paid search brand' THEN 'Paid Search - Brand'
+                when c.channel = 'paid search nonbrand' THEN 'Paid Search - Nonbrand' 
+                ELSE 'Paid Search - Nonbrand' 
+           END as channel,
+           c.country,
+           c.visitstarttime,
+           r.sessionid,
+           r.revenue_usd,
+           r.billablesize,
+           r.datemade_utc,
+           r.datemade_timestamp_utc,
+           r.rid,
+           r.resid,
+           r.shiftdate,
+           CASE WHEN isbillableorpending = 0 THEN 0 ELSE revenue_usd END seated_revenue_usd,
+           CASE WHEN isbillableorpending = 0 THEN 0 ELSE 1 END seated_booking,
+           CASE WHEN isbillableorpending = 0 THEN 0 ELSE billablesize END seated_covers,
+           CASE WHEN c.sessionid = r.sessionid then -1 ELSE floor(datediff(second, c.date, r.datemade_utc)/86400) END cohort_age
+           FROM sem_dev.f_opentable_paid_sessions_detailed c
+           JOIN pma.f_opentable_fct_reservation r  ON c.gpid_match = r.gpid AND datediff(second, c.visitstarttime, r.datemade_timestamp_utc) BETWEEN 0 and 60 * 60 * 24 * 21
+           AND c.gpid_match IS NOT NULL  AND r.gpid IS NOT NULL
+           WHERE  (c.date>='2021-01-01') 
+           ) a
+           ) a
+
+   WHERE   attribution_priority = 1
+   GROUP BY 1,2,3,4,5,6,7,8,9;
+
+
+;
+--*/
+--
+-- 
+--DROP TABLE IF EXISTS sem_dev.dhaslop_30d_revenue_history_detailed;
+--CREATE TABLE sem_dev.dhaslop_30d_revenue_history_detailed AS
+--
+--SELECT
+--  date
+--  ,a.adgroup_id
+--  ,a.keyword_id
+--  ,a.campaign_id
+--  ,a.ref_id  
+--  ,a.platform as device
+--  ,a.country
+--  ,a.channel as session_channel
+--  ,'30d' as payback_window
+--  ,coalesce(count(1),0) gross_bookings
+--  ,sum(revenue_usd) gross_revenue_usd
+--  ,sum(billablesize) gross_covers
+--  
+--FROM 
+--(
+--        SELECT
+--        *
+--        , row_number() OVER (PARTITION BY datemade_utc, sessionid, rid, resid order by datediff(second, visitstarttime, datemade_timestamp_utc) ASC) attribution_priority 
+--        
+--        FROM 
+--        (
+--        SELECT 
+--           c.anonymousid_match,
+--           c.gpid_match,
+--           c.date,
+--           c.adgroup_id,
+--           c.keyword_id,
+--           c.campaign_id,
+--           c.ref_id,
+--           CASE WHEN c.platform ='web' THEN 'desktop' ELSE 'mobile' END as platform,
+--           case 
+--                when c.channel = 'paid search restaurants' THEN 'Paid Search - Restaurant'
+--                when c.channel = 'paid search brand' THEN 'Paid Search - Brand'
+--                when c.channel = 'paid search nonbrand' THEN 'Paid Search - Nonbrand' 
+--                ELSE 'Paid Search - Nonbrand' 
+--           END as channel,
+--           c.country,
+--           c.visitstarttime,
+--           r.sessionid,
+--           r.revenue_usd,
+--           r.billablesize,
+--           r.datemade_utc,
+--           r.datemade_timestamp_utc,
+--           r.rid,
+--           r.resid,
+--           r.shiftdate,
+--           CASE WHEN isbillableorpending = 0 THEN 0 ELSE revenue_usd END seated_revenue_usd,
+--           CASE WHEN isbillableorpending = 0 THEN 0 ELSE 1 END seated_booking,
+--           CASE WHEN isbillableorpending = 0 THEN 0 ELSE billablesize END seated_covers,
+--           CASE WHEN c.sessionid = r.sessionid then -1 ELSE floor(datediff(second, c.date, r.datemade_utc)/86400) END cohort_age
+--           FROM sem_dev.f_opentable_paid_sessions_detailed c
+--           JOIN pma.f_opentable_fct_reservation r  ON c.anonymousid_match = r.anonymousid  AND datediff(second, c.visitstarttime, r.datemade_timestamp_utc) BETWEEN 0 and 60 * 60 * 24 * 30
+--           WHERE (c.date>='2019-01-01' )
+--        
+--        UNION ALL
+--        
+--           SELECT 
+--           c.anonymousid_match,
+--           c.gpid_match,
+--           c.date,
+--           c.adgroup_id,
+--           c.keyword_id,
+--           c.campaign_id,
+--           c.ref_id,
+--           CASE WHEN c.platform ='web' THEN 'desktop' ELSE 'mobile' END as platform,
+--           case 
+--                when c.channel = 'paid search restaurants' THEN 'Paid Search - Restaurant'
+--                when c.channel = 'paid search brand' THEN 'Paid Search - Brand'
+--                when c.channel = 'paid search nonbrand' THEN 'Paid Search - Nonbrand' 
+--                ELSE 'Paid Search - Nonbrand' 
+--           END as channel,
+--           c.country,
+--           c.visitstarttime,
+--           r.sessionid,
+--           r.revenue_usd,
+--           r.billablesize,
+--           r.datemade_utc,
+--           r.datemade_timestamp_utc,
+--           r.rid,
+--           r.resid,
+--           r.shiftdate,
+--           CASE WHEN isbillableorpending = 0 THEN 0 ELSE revenue_usd END seated_revenue_usd,
+--           CASE WHEN isbillableorpending = 0 THEN 0 ELSE 1 END seated_booking,
+--           CASE WHEN isbillableorpending = 0 THEN 0 ELSE billablesize END seated_covers,
+--           CASE WHEN c.sessionid = r.sessionid then -1 ELSE floor(datediff(second, c.date, r.datemade_utc)/86400) END cohort_age
+--           FROM sem_dev.f_opentable_paid_sessions_detailed c
+--           JOIN pma.f_opentable_fct_reservation r  ON c.gpid_match = r.gpid AND datediff(second, c.visitstarttime, r.datemade_timestamp_utc) BETWEEN 0 and 60 * 60 * 24 * 30  
+--           AND c.gpid_match IS NOT NULL  AND r.gpid IS NOT NULL
+--           WHERE  (c.date>='2019-01-01') 
+--           ) a
+--           ) a
+--
+--   WHERE   attribution_priority = 1
+--   GROUP BY 1,2,3,4,5,6,7,8,9;
+
+
+;
+
+DROP TABLE IF EXISTS sem_scratchbook.dhaslop_revenue_detailed;
+CREATE TABLE sem_scratchbook.dhaslop_revenue_detailed AS
+
+        SELECT 
+
+                a.date
+                ,a.adgroup_id
+                ,a.keyword_id
+                ,a.campaign_id
+                ,a.ref_id
+                ,COALESCE(e.account_id,f.account_id) as account_id
+                ,SUM(CASE WHEN payback_window = '0d' THEN gross_bookings ELSE 0 END) as gross_bookings_0d
+                ,SUM(CASE WHEN payback_window = '3d' THEN gross_bookings ELSE 0 END) as gross_bookings_3d
+                ,SUM(CASE WHEN payback_window = '7d' THEN gross_bookings ELSE 0 END) as gross_bookings_7d
+--                ,SUM(CASE WHEN payback_window = '14d' THEN gross_bookings ELSE 0 END) as gross_bookings_14d
+--                ,SUM(CASE WHEN payback_window = '21d' THEN gross_bookings ELSE 0 END) as gross_bookings_21d
+--                ,SUM(CASE WHEN payback_window = '30d' THEN gross_bookings ELSE 0 END) as gross_bookings_30d
+                ,SUM(CASE WHEN payback_window = '0d' THEN gross_covers ELSE 0 END) as gross_covers_0d
+                ,SUM(CASE WHEN payback_window = '3d' THEN gross_covers ELSE 0 END) as gross_covers_3d
+                ,SUM(CASE WHEN payback_window = '7d' THEN gross_covers ELSE 0 END) as gross_covers_7d
+                ,SUM(CASE WHEN payback_window = '7d' THEN gross_covers*0.7 ELSE 0 END) as nett_covers_7d
+               
+--                ,SUM(CASE WHEN payback_window = '14d' THEN gross_covers ELSE 0 END) as gross_covers_14d
+--                ,SUM(CASE WHEN payback_window = '21d' THEN gross_covers ELSE 0 END) as gross_covers_21d
+--                ,SUM(CASE WHEN payback_window = '30d' THEN gross_covers ELSE 0 END) as gross_covers_30d
+                ,SUM(CASE WHEN payback_window = '0d' THEN gross_revenue_usd ELSE 0 END) as gross_revenue_usd_0d
+                ,SUM(CASE WHEN payback_window = '3d' THEN gross_revenue_usd ELSE 0 END) as gross_revenue_usd_3d
+                ,SUM(CASE WHEN payback_window = '7d' THEN gross_revenue_usd ELSE 0 END) as gross_revenue_usd_7d
+--                ,SUM(CASE WHEN payback_window = '14d' THEN gross_revenue_usd ELSE 0 END) as gross_revenue_usd_14d
+--                ,SUM(CASE WHEN payback_window = '21d' THEN gross_revenue_usd ELSE 0 END) as gross_revenue_usd_21d
+--                ,SUM(CASE WHEN payback_window = '30d' THEN gross_revenue_usd ELSE 0 END) as gross_revenue_usd_30d
+                ,SUM(CASE WHEN payback_window = '0d' THEN gross_revenue_usd*0.7 ELSE 0 END) as nett_revenue_usd_0d
+                ,SUM(CASE WHEN payback_window = '3d' THEN gross_revenue_usd*0.7 ELSE 0 END) as nett_revenue_usd_3d
+                ,SUM(CASE WHEN payback_window = '7d' THEN gross_revenue_usd*0.7 ELSE 0 END) as nett_revenue_usd_7d
+--                ,SUM(CASE WHEN payback_window = '14d' THEN gross_revenue_usd*0.7 ELSE 0 END) as nett_revenue_usd_14d
+--                ,SUM(CASE WHEN payback_window = '21d' THEN gross_revenue_usd*0.7 ELSE 0 END) as nett_revenue_usd_21d
+--                ,SUM(CASE WHEN payback_window = '30d' THEN gross_revenue_usd*0.7 ELSE 0 END) as nett_revenue_usd_30d
+                ,SUM(CASE WHEN payback_window = '0d' THEN gross_revenue_usd*COALESCE((1-b.revenue_cancellation_perc),0.7) ELSE 0 END) as nett_est_revenue_usd_0d
+                ,SUM(CASE WHEN payback_window = '3d' THEN gross_revenue_usd*COALESCE((1-b.revenue_cancellation_perc),0.7) ELSE 0 END) as nett_est_revenue_usd_3d
+                ,SUM(CASE WHEN payback_window = '7d' THEN gross_revenue_usd*COALESCE((1-b.revenue_cancellation_perc),0.7) ELSE 0 END) as nett_est_revenue_usd_7d
+--                ,SUM(CASE WHEN payback_window = '14d' THEN gross_revenue_usd*COALESCE((1-b.revenue_cancellation_perc),0.7) ELSE 0 END) as nett_est_revenue_usd_14d
+--                ,SUM(CASE WHEN payback_window = '21d' THEN gross_revenue_usd*COALESCE((1-b.revenue_cancellation_perc),0.7) ELSE 0 END) as nett_est_revenue_usd_21d
+--                ,SUM(CASE WHEN payback_window = '30d' THEN gross_revenue_usd*COALESCE((1-b.revenue_cancellation_perc),0.7) ELSE 0 END) as nett_est_revenue_usd_30d
+
+FROM 
+(
+SELECT * FROM sem_scratchbook.dhaslop_0d_revenue_history_detailed 
+UNION 
+SELECT * FROM sem_scratchbook.dhaslop_3d_revenue_history_detailed 
+UNION 
+SELECT * FROM sem_scratchbook.dhaslop_7d_revenue_history_detailed 
+/*UNION 
+SELECT * FROM sem_dev.dhaslop_14d_revenue_history_detailed 
+UNION 
+SELECT * FROM sem_dev.dhaslop_21d_revenue_history_detailed 
+UNION 
+SELECT * FROM sem_dev.dhaslop_30d_revenue_history_detailed */
+)  a
+
+LEFT JOIN 
+
+(
+  SELECT * FROM (SELECT lower(case when country='UK' THEN 'GB' else country END) country,session_channel
+  ,case when device_platform='PC' then 'desktop' when device_platform='Mobile Web' then 'mobile' when device_platform='App' then 'mobile' ELSE NULL END as device
+  ,sum(revenue_usd*0.7) as revenue_estimate
+  ,1-sum(CASE WHEN isbillableorpending=1 then revenue_usd ELSE 0 END)/sum(revenue_usd) as revenue_cancellation_perc
+  ,1-sum(CASE WHEN isbillableorpending=1 then 1 ELSE 0 END)/count(*) as bkng_cancellation_perc
+  ,sum(revenue_usd) as gross_revenue
+  FROM pma.f_opentable_fct_reservation r  WHERE datemade >= '2022-01-01' AND country IN ('US','UK','AU','CA','MX','DE','IE') AND session_channel ILIKE ('%Paid Search%')
+  GROUP BY 1,2,3 ORDER BY gross_revenue) a where gross_revenue > 100000
+) b on a.device=b.device AND a.country=b.country AND a.session_channel=b.session_channel
+
+LEFT JOIN otpma.d_google_ads_campaign e on e.campaign_id=a.campaign_id
+LEFT JOIN otpma.d_bing_campaign f on f.campaign_id=a.campaign_id
+
+WHERE date>='2019-01-01'
+
+GROUP BY 1,2,3,4,5,6
+
+
+;
+DROP TABLE IF EXISTS sem_scratchbook.dhaslop_sem_results ;
+        
+        CREATE TABLE sem_scratchbook.dhaslop_sem_results as
+                
+        SELECT
+        date
+        ,CEILING (((current_date() -1 - date) / 90)) * 90 as rolling_window_90
+        ,CEILING (((current_date() -1 - date) / 30)) * 30 as rolling_window_30
+        ,CEILING (((current_date() -1 - date) / 14)) * 14 as rolling_window_14
+        ,CEILING (((current_date() -1 - date) / 7)) * 7 as rolling_window_7
+        ,CEILING (((current_date() -1 - date) / 3)) * 3 as rolling_window_3
+        ,spend_revenue_union.adgroup_id
+        ,spend_revenue_union.keyword_id
+        ,spend_revenue_union.campaign_id
+        ,spend_revenue_union.ref_id
+        ,COALESCE(spend_revenue_union.account_id,c.account_id,d.account_id,e.account_id,f.account_id) account_id
+        ,COALESCE(e.campaign_name,f.campaign_name) campaign_name
+        ,COALESCE(g.account_name,h.account_name) account_name
+        /*,COALESCE(i.keyword,j.keyword) keyword*/
+        ,k.product
+        ,k.device
+        ,k.country
+        ,k.language
+        ,COALESCE(r.sem_category,k.sem_category) as sem_category
+        ,k.provider
+        , SUM(imps) imps
+        , SUM(clicks) clicks
+        , SUM(spend_usd) spend_usd
+        , SUM(spend_local) spend_local
+        , SUM(gross_bookings_0d) gross_bookings_0d
+        , SUM(gross_bookings_3d) gross_bookings_3d
+        , SUM(gross_bookings_7d) gross_bookings_7d
+        --, SUM(gross_bookings_14d) gross_bookings_14d
+        --, SUM(gross_bookings_21d) gross_bookings_21d
+        --, SUM(gross_bookings_30d) gross_bookings_30d
+        , SUM(gross_covers_0d) gross_covers_0d
+        , SUM(gross_covers_3d) gross_covers_3d
+        , SUM(gross_covers_7d) gross_covers_7d
+        , SUM(nett_covers_7d) nett_covers_7d
+        --, SUM(gross_covers_14d) gross_covers_14d
+        --, SUM(gross_covers_21d) gross_covers_21d
+        --, SUM(gross_covers_30d) gross_covers_30d
+        , SUM(gross_revenue_usd_0d) gross_revenue_usd_0d
+        , SUM(gross_revenue_usd_3d) gross_revenue_usd_3d
+        , SUM(gross_revenue_usd_7d) gross_revenue_usd_7d
+        --, SUM(gross_revenue_usd_14d) gross_revenue_usd_14d
+        --, SUM(gross_revenue_usd_21d) gross_revenue_usd_21d
+        --, SUM(gross_revenue_usd_30d) gross_revenue_usd_30d
+        , SUM(nett_revenue_usd_0d) nett_revenue_usd_0d
+        , SUM(nett_revenue_usd_3d) nett_revenue_usd_3d
+        , SUM(nett_revenue_usd_7d) nett_revenue_usd_7d
+        --, SUM(nett_revenue_usd_14d) nett_revenue_usd_14d
+        --, SUM(nett_revenue_usd_21d) nett_revenue_usd_21d
+        --, SUM(nett_revenue_usd_30d) nett_revenue_usd_30d
+        , SUM(nett_est_revenue_usd_0d) nett_est_revenue_usd_0d
+        , SUM(nett_est_revenue_usd_3d) nett_est_revenue_usd_3d
+        , SUM(nett_est_revenue_usd_7d) nett_est_revenue_usd_7d
+        --, SUM(nett_est_revenue_usd_14d) nett_est_revenue_usd_14d
+        --, SUM(nett_est_revenue_usd_21d) nett_est_revenue_usd_21d
+        --, SUM(nett_est_revenue_usd_30d) nett_est_revenue_usd_30d
+        
+        FROM
+        
+        (
+                        
+                   SELECT
+                        date
+                        ,adgroup_id
+                        ,keyword_id
+                        ,campaign_id
+                        ,ref_id
+                        ,account_id
+                        ,imps
+                        ,clicks
+                        ,spend_usd
+                        ,spend_local
+                        , 0 as gross_bookings_0d
+                        , 0 as gross_bookings_3d
+                        , 0 as gross_bookings_7d
+        --                , 0 as gross_bookings_14d
+        --                , 0 as gross_bookings_21d
+        --                , 0 as gross_bookings_30d
+                        , 0 as gross_covers_0d
+                        , 0 as gross_covers_3d
+                        , 0 as gross_covers_7d
+                        , 0 as nett_covers_7d
+        --                , 0 as gross_covers_14d
+        --                , 0 as gross_covers_21d
+        --                , 0 as gross_covers_30d
+                        , 0 as gross_revenue_usd_0d
+                        , 0 as gross_revenue_usd_3d
+                        , 0 as gross_revenue_usd_7d
+        --                , 0 as gross_revenue_usd_14d
+        --                , 0 as gross_revenue_usd_21d
+        --                , 0 as gross_revenue_usd_30d
+                        , 0 as nett_revenue_usd_0d
+                        , 0 as nett_revenue_usd_3d
+                        , 0 as nett_revenue_usd_7d
+        --                , 0 as nett_revenue_usd_14d
+        --                , 0 as nett_revenue_usd_21d
+        --                , 0 as nett_revenue_usd_30d
+                        , 0 as nett_est_revenue_usd_0d
+                        , 0 as nett_est_revenue_usd_3d
+                        , 0 as nett_est_revenue_usd_7d
+        --                , 0 as nett_est_revenue_usd_14d
+        --                , 0 as nett_est_revenue_usd_21d
+        --                , 0 as nett_est_revenue_usd_30d
+                
+        FROM 
+        
+                        (
+                        
+                                SELECT
+                                date
+                                ,adgroup_id
+                                ,keyword_id
+                                ,a.campaign_id
+                                ,0 as ref_id
+                                ,account_id
+                                ,a.device
+                                ,sum(imps) as imps
+                                ,sum(clicks) as clicks
+                                ,sum(spend_usd) as spend_usd
+                                ,sum(spend_local) as spend_local
+                                FROM
+                                (
+                                SELECT 
+                                account_id
+                                ,campaign_id
+                                ,adgroup_id
+                                ,keyword_id
+                                ,date
+                                ,CASE WHEN device_type ='Computers' THEN 'desktop' ELSE 'mobile' END as device
+                                ,sum(impressions) imps
+                                ,sum(clicks) clicks
+                                ,sum(cost_local*conversion_rate) spend_usd
+                                ,sum(cost_local) spend_local
+                                FROM otpma.f_google_ads_keyword_performance_api a
+                                --FROM otpma.f_adwords_performance_api a
+                                LEFT JOIN bi_view.d_currency_rate c ON c.datestamp=a.date AND c.currency_code=a.currency_code 
+                                WHERE date >='2019-01-01'
+                                GROUP BY 1,2,3,4,5,6
+                                
+                                UNION  
+                                
+                                SELECT 
+                                 a.account_id
+                                , a.campaign_id
+                                , 0 as adgroup_id
+                                , 0 as keyword_id
+                                , date
+                                , CASE WHEN a.device ='Computers' THEN 'desktop' ELSE 'mobile' END as device
+                                ,sum(impressions) imps
+                                ,sum(clicks) clicks
+                                ,sum(cost_local*conversion_rate) spend_usd
+                                ,sum(cost_local) spend_local
+                                 FROM otpma.f_google_ads_campaign_performance_api a
+                                --FROM otpma.f_adwords_campaign_performance_api a
+                                LEFT JOIN otpma.d_google_ads_campaign  b on a.campaign_id=b.campaign_id
+                                LEFT JOIN  otpma.d_google_ads_account  c on c.account_id=b.account_id
+                                LEFT JOIN bi_view.d_currency_rate d ON d.datestamp=a.date AND d.currency_code=c.currency_code 
+                                
+                                WHERE date >='2019-01-01' AND (b.account_name ILIKE '%OLA%' OR b.account_name ILIKE '%DSA%')
+                                GROUP BY 1,2,3,4,5,6
+                                
+                                UNION 
+                                
+                                SELECT
+                                a.account_id
+                                ,a.campaign_id
+                                ,a.adgroup_id
+                                ,a.keyword_id
+                                ,date
+                                ,CASE WHEN a.device_type ='c' THEN 'desktop' ELSE 'mobile' END as device
+                                ,sum(impressions) as imps
+                                ,sum(clicks) as clicks
+                                ,sum(cost_local*conversion_rate) spend_usd
+                                ,sum(cost_local) spend_local
+                                FROM otpma.f_bing_performance_api a
+                                LEFT JOIN bi_view.d_currency_rate c ON c.datestamp=a.date AND c.currency_code=a.currency_code 
+                                WHERE date >='2019-01-01'
+                                GROUP BY 1,2,3,4,5,6
+                                
+                                UNION 
+                                
+                                SELECT
+                                a.account_id
+                                ,a.campaign_id
+                                ,a.adgroup_id
+                                ,0 as keyword_id
+                                ,date
+                                ,CASE WHEN a.device_type ='c' THEN 'desktop' ELSE 'mobile' END as device
+                                ,sum(impressions) as imps
+                                ,sum(clicks) as clicks
+                                ,sum(cost_local*c.conversion_rate) spend_usd
+                                ,sum(cost_local) spend_local
+                                FROM otpma.f_bing_performance_dsa_api a
+                                LEFT JOIN otpma.d_bing_account b ON b.account_id=a.account_id
+                                LEFT JOIN bi_view.d_currency_rate c ON c.datestamp=a.date AND c.currency_code=b.currency_code 
+                                WHERE date >='2019-01-01'
+                                GROUP BY 1,2,3,4,5,6
+                                
+                                UNION 
+                                
+                                SELECT
+                                REPLACE(a.customer_id,'-','')::!INT as account_id
+                                , NULL as campaign_id
+                                , NULL as adgroup_id
+                                , NULL as keyword_id
+                                , day as date
+                                , NULL as device
+                                , sum(impressions) as imps
+                                , sum(clicks) as clicks
+                                , sum(cost*conversion_rate) as spend_usd
+                                , sum(cost) spend_local
+                                FROM sem_scratchbook.dhaslop_sem_pre_2019_spend a
+                                LEFT JOIN bi_view.d_currency_rate c ON c.datestamp=a.day AND c.currency_code=a.currency_code 
+                                WHERE date < '2019-01-01'
+                                GROUP BY 1,2,3,4,5,6
+                                
+                                ) a 
+                                
+                                GROUP BY 1,2,3,4,5,6,7
+        
+                        ) spend_numbers
+        
+        UNION
+        
+                SELECT
+                        date
+                        ,adgroup_id
+                        ,keyword_id
+                        ,campaign_id
+                        ,ref_id
+                        ,account_id
+                        ,0 as imps
+                        ,0 as clicks
+                        ,0 as spend_usd
+                        ,0 as spend_local
+                        ,gross_bookings_0d
+                        ,gross_bookings_3d
+                        ,gross_bookings_7d
+        --                ,gross_bookings_14d
+        --                ,gross_bookings_21d
+        --                ,gross_bookings_30d
+                        ,gross_covers_0d
+                        ,gross_covers_3d
+                        ,gross_covers_7d
+                        ,nett_covers_7d
+        --                ,gross_covers_14d
+        --                ,gross_covers_21d
+        --                ,gross_covers_30d
+                        ,gross_revenue_usd_0d
+                        ,gross_revenue_usd_3d
+                        ,gross_revenue_usd_7d
+        --                ,gross_revenue_usd_14d
+        --                ,gross_revenue_usd_21d
+        --                ,gross_revenue_usd_30d
+                        ,nett_revenue_usd_0d
+                        ,nett_revenue_usd_3d
+                        ,nett_revenue_usd_7d
+        --                ,nett_revenue_usd_14d
+        --                ,nett_revenue_usd_21d
+        --                ,nett_revenue_usd_30d
+                        ,nett_est_revenue_usd_0d
+                        ,nett_est_revenue_usd_3d
+                        ,nett_est_revenue_usd_7d
+        --                ,nett_est_revenue_usd_14d
+        --                ,nett_est_revenue_usd_21d
+        --                ,nett_est_revenue_usd_30d
+                      
+                FROM sem_scratchbook.dhaslop_revenue_detailed
+        
+        ) spend_revenue_union
+        
+        LEFT JOIN otpma.d_google_ads_adgroup c on c.adgroup_id=spend_revenue_union.adgroup_id
+        LEFT JOIN otpma.d_bing_adgroup d on d.adgroup_id=spend_revenue_union.adgroup_id
+        LEFT JOIN otpma.d_google_ads_campaign e on e.campaign_id=spend_revenue_union.campaign_id
+        LEFT JOIN otpma.d_bing_campaign f on f.campaign_id=spend_revenue_union.campaign_id
+        LEFT JOIN otpma.d_google_ads_account g on g.account_id=COALESCE(c.account_id,d.account_id,e.account_id,f.account_id)
+        LEFT JOIN otpma.d_bing_account h on h.account_id=COALESCE(c.account_id,d.account_id,e.account_id,f.account_id)
+        /*LEFT JOIN otpma.d_adwords_keyword i on i.keyword_id=spend_revenue_union.keyword_id
+        LEFT JOIN otpma.d_bing_keyword j on j.keyword_id=spend_revenue_union.keyword_id*/
+        LEFT JOIN sem_scratchbook.dhaslop_campaign_categories r on COALESCE(e.campaign_id,f.campaign_id)=r.campaign_id
+        LEFT JOIN sem_scratchbook.dhaslop_account_categories k on COALESCE(spend_revenue_union.account_id,c.account_id,d.account_id,e.account_id,f.account_id)=k.account_id
+        
+        GROUP BY 1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19
+        --ORDER BY date,campaign_id,adgroup_id,keyword_id
+        --SEGMENTED BY hash(employee_key) 
+        
