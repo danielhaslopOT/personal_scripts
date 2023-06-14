@@ -1,0 +1,51 @@
+
+with raw_data as 
+
+(
+SELECT 
+a.resid
+,a.anonymousid
+,to_date(a.datemade) date_created
+,a.billablesize
+,a.MKTNG_ACQ_SRC 
+,user_email
+,CASE WHEN e.platform IN ('ANDROID','IPHONE') THEN 'APP' ELSE e.platform END as device
+
+FROM  ANALYTICS.PUBLIC.FCT_RESERVATION A 
+
+LEFT JOIN ANALYTICS.PUBLIC.DM_PARTNER_APPLICATION e on e.partner_id=A.partner_id
+LEFT JOIN analytics..dm_globalperson g ON a.userweb_id=g.userweb_id
+LEFT JOIN analytics..dm_global_users u ON g.globalpersonid=u.gpid
+
+
+WHERE to_date(datemade)>='2021-04-01' AND isbillableorpending=1
+
+)
+
+SELECT * 
+FROM (
+SELECT
+reservations
+,count(distinct user_email) as users
+FROM
+(
+SELECT
+user_email
+,COUNT(*) as reservations
+,COUNT(distinct anonymousid) as users
+,SUM(billablesize) as covers
+FROM raw_data
+GROUP BY 1
+) a
+GROUP BY 1 
+
+UNION
+
+SELECT
+0 as reservations
+,count(distinct user_email) as users
+FROM raw_data
+)
+ORDER BY 1 ASC
+
+select * from analytics..dm_global_users limit 10
