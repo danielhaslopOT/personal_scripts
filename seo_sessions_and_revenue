@@ -24,7 +24,7 @@ WHERE rank=1
 
 --generate table that combines sessions + revenue data
 
-DROP TABLE if exists seo_analytics_page_performance;
+DROP VIEW if exists seo_analytics_page_performance;
 CREATE VIEW seo_analytics_page_performance as
 SELECT 
 date(timestamp) date
