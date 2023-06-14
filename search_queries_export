@@ -1,0 +1,28 @@
+@export on;
+@export set filename="/Users/dhaslop/desktop/searchterms_2022.tsv";
+
+SELECT
+c.account_id
+,c.campaign_id
+,a.adgroup_id
+,a.keyword_id
+,a.keyword
+,search_term
+,a.match_type_with_variant
+,c.account_name
+,c.campaign_name
+,k.country
+,sum(impressions) as imps
+,sum(clicks) as clicks
+,sum(cost_local) as cost
+FROM (
+SELECT search_term, keyword, keyword_id, adgroup_id,match_type_with_variant,sum(cost_local) cost_local,sum(clicks) clicks,sum(impressions) impressions  
+from otpma.f_google_ads_search_query_standard_api where date>='2022-01-01' GROUP BY 1,2,3,4,5 
+) a
+LEFT JOIN otpma.d_google_ads_keyword c ON c.keyword_id=a.keyword_id AND c.adgroup_id=a.adgroup_id 
+LEFT JOIN sem_scratchbook.dhaslop_account_categories k on k.account_id=c.account_id
+WHERE k.country='US'
+GROUP BY 1,2,3,4,5,6,7,8,9,10
+ORDER BY cost desc;
+
+@export off;
