@@ -1,0 +1,23 @@
+@export on;
+@export set filename="/Users/dhaslop/desktop/res_import_tsidufisudhfsdf.tsv";
+
+SELECT 
+datemade
+,shiftdate
+,res_id
+,resid
+,rid
+,billablesize
+,isbillableorpending
+,yield
+,xchgrate_to_usd
+,revenue_usd
+,country
+,restaurant_city
+,sessionid
+,anonymousid
+
+FROM  pma.f_opentable_fct_reservation 
+WHERE LOWER(country) in ('de','ie','uk','au','us','ca','mx') and datemade >= '2022-06-01' and session_channel like '%Paid Search%' LIMIT 100;
+
+@export off;
