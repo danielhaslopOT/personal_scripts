@@ -1,0 +1,99 @@
+DROP VIEW sem_scratchbook.daily_email;
+CREATE VIEW sem_scratchbook.daily_email as
+
+SELECT
+
+a.*
+,spend_usd-LAG(spend_usd,1,0) OVER (ORDER BY date asc) AS DoD_spend
+,(nett_revenue_usd_incremental-LAG(nett_revenue_usd_incremental,1,0) OVER (ORDER BY date asc))/(spend_usd-LAG(spend_usd,1,0) OVER (ORDER BY date asc)) as mROI
+FROM
+(SELECT
+date
+,to_char(date,'Dy') dow
+,sum(spend_usd) spend_usd
+,sum(nett_revenue_usd_0d) nett_revenue_usd_0d
+,sum(nett_revenue_usd_7d) nett_revenue_usd_7d
+,sum(case 
+        when country='US' THEN nett_revenue_usd_7d * 2
+        ELSE nett_revenue_usd_7d * 1.6 END)
+      as nett_revenue_usd_incremental
+,sum(nett_revenue_usd_0d)/sum(spend_usd) as ROI_0
+,sum(nett_revenue_usd_7d)/sum(spend_usd) as ROI_7
+,sum(case when country='US' THEN nett_revenue_usd_7d * 2 ELSE nett_revenue_usd_7d * 1.6  END)/sum(spend_usd) as iROI
+FROM sem_scratchbook.dhaslop_sem_results
+WHERE date >= current_date() - INTERVAL '18 DAY'
+AND sem_category IN ('NonBrand','Competitor','Nonbrand')
+GROUP BY 1,2 ) a
+
+ORDER BY date desc
+LIMIT 15
+
+
+--SELECT * FROM sem_scratchbook.daily_email
+;
+DROP VIEW sem_scratchbook.daily_email_week;
+CREATE VIEW sem_scratchbook.daily_email_week as
+
+SELECT
+
+a.*
+,spend_usd-LAG(spend_usd,1,0) OVER (ORDER BY date asc) AS WoW_spend
+,nett_revenue_usd_incremental-LAG(nett_revenue_usd_incremental,1,0) OVER (ORDER BY date asc) AS WoW_revenue_incremental
+,(nett_revenue_usd_incremental-LAG(nett_revenue_usd_incremental,1,0) OVER (ORDER BY date asc))/(spend_usd-LAG(spend_usd,1,0) OVER (ORDER BY date asc)) as mROI
+
+FROM
+( 
+SELECT 
+date+7-dayofweek_iso(date) as date
+,sum(spend_usd) spend_usd
+        ,sum(nett_revenue_usd_0d) nett_revenue_usd_0d
+,sum(nett_revenue_usd_7d) nett_revenue_usd_7d
+,sum(case 
+        when country='US' THEN nett_revenue_usd_7d * 2
+        ELSE nett_revenue_usd_7d * 1.6 END)
+      as nett_revenue_usd_incremental
+,sum(nett_revenue_usd_0d)/sum(spend_usd) as ROI_0
+,sum(nett_revenue_usd_7d)/sum(spend_usd) as ROI_7
+,sum(case when country='US' THEN nett_revenue_usd_7d * 2 ELSE nett_revenue_usd_7d * 1.6  END)/sum(spend_usd) as iROI
+FROM sem_scratchbook.dhaslop_sem_results
+WHERE date >= '2023-01-08' AND sem_category IN ('NonBrand','Competitor','Nonbrand')
+GROUP BY 1 order by date desc) a
+
+ORDER BY date desc
+LIMIT 12
+;
+
+DROP VIEW sem_scratchbook.daily_email_month;
+CREATE VIEW sem_scratchbook.daily_email_month as
+
+SELECT
+
+a.*
+,spend_usd-LAG(spend_usd,1,0) OVER (ORDER BY date asc) AS MoM_spend
+,(nett_revenue_usd_incremental-LAG(nett_revenue_usd_incremental,1,0) OVER (ORDER BY date asc))/(spend_usd-LAG(spend_usd,1,0) OVER (ORDER BY date asc)) as mROI
+,(nett_revenue_usd_incremental/days-LAG(nett_revenue_usd_incremental,1,0) OVER (ORDER BY date asc)/LAG(days,1,0) OVER (ORDER BY date asc))/(spend_usd/days-LAG(spend_usd,1,0) OVER (ORDER BY date asc)/LAG(days,1,0) OVER (ORDER BY date asc)) as mROI_daily
+FROM
+( 
+SELECT 
+add_months(last_day(date)+1,-1) as date
+,count(distinct date) days
+,sum(spend_usd) spend_usd
+,sum(nett_revenue_usd_0d) nett_revenue_usd_0d
+,sum(nett_revenue_usd_7d) nett_revenue_usd_7d
+,sum(case 
+        when country='US' THEN nett_revenue_usd_7d * 2
+        ELSE nett_revenue_usd_7d * 1.6 END)
+      as nett_revenue_usd_incremental
+,sum(nett_revenue_usd_0d)/sum(spend_usd) as ROI_0
+,sum(nett_revenue_usd_7d)/sum(spend_usd) as ROI_7
+,sum(case when country='US' THEN nett_revenue_usd_7d * 2 ELSE nett_revenue_usd_7d * 1.6  END)/sum(spend_usd) as iROI
+FROM sem_scratchbook.dhaslop_sem_results
+WHERE date >= '2022-01-01'  AND sem_category IN ('NonBrand','Competitor','Nonbrand')
+GROUP BY 1) a
+
+ORDER BY date desc
+LIMIT 6
+
+
+
+
