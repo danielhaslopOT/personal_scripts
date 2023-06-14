@@ -1,0 +1,6 @@
+
+SELECT count(*) as restaurants
+FROM analytics..dm_restaurant a
+JOIN STG_ANALYTICS."SFSTATS"."SF_ACCOUNTS" b on cast(a.rid as string)=cast(b.rid as string)
+WHERE b.active_contract_number IS NOT NULL
+
