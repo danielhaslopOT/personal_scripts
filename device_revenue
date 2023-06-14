@@ -1,0 +1,19 @@
+
+SELECT 
+e.platform
+,count(distinct r.resid) as booked_bookings
+,SUM(case when e.platform = 'PC' then 1 else 0 END) as desktop_bookings
+,SUM(case when e.platform IN ('ANDROID','IPHONE') then 1 else 0 END) as app_bookings
+,SUM(case when e.platform IN ('MOBILE WEB') then 1 else 0 END) as mobile_web_bookings
+FROM analytics..fct_reservation r 
+LEFT JOIN ANALYTICS.PUBLIC.DM_PARTNER_APPLICATION e on e.partner_id=r.partner_id
+join analytics..dm_restaurant t on t.rid=r.rid
+WHERE to_date(datemade)>='2022-01-01' 
+AND nvl(t.customer_type, '-') not in ('Test Restaurant') -- excluding test restaurants
+AND t.metroareaname not like '%Demoland%'-- excluding test restaurants
+AND isbillableorpending=1
+AND r.country='MX'
+GROUP BY 1
+ORDER BY booked_bookings desc
+
+-- turns out that we used platform and gave the mobile web vs desktop web a different partner id as it was on a different codebase. that was aligned in Nov'22 and now we can't use partner. Thinking about using user agent instead.
