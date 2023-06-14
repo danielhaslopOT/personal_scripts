@@ -1,0 +1,637 @@
+
+
+--what about brand accounts ?
+
+
+--meal_type
+--holidays
+
+DROP TABLE IF EXISTS holiday;
+CREATE TABLE holiday (holiday string);
+INSERT INTO holiday
+VALUES
+('thanksgiving'),
+('christmas'),
+('christmas day'),
+('xmas'),
+('new year'),
+('new year''s day'),
+('valentine''s day'),
+('mother''s day'),
+('pre theatre'),
+('after show');
+
+
+DROP TABLE IF EXISTS templates;
+CREATE TABLE templates (template string); 
+INSERT INTO templates
+VALUES 
+('{cuisine} {nouns}'),
+('{cuisine} {location}'),
+('{cuisine} in {location}'),
+('{cuisine} {nouns} in {location}'),
+('{nouns} in {location}'),
+('{nouns} in {location} city centre'),
+('{nouns} deals {location}'),
+('{location} {superlative} {nouns}'),
+--('{nouns} near {location} city centre'),
+('{location} {nouns} city centre'),
+('{nouns} {location} city centre'),
+('{location} city centre {nouns}'),
+('{cuisine} {nouns} near {location}'),
+('{cuisine} near me'),
+('{cuisine} {nouns} {location}'),
+('{cuisine} {nouns} near me'),
+('{location} {cuisine} {nouns}'),
+('{superlative} {cuisine} near me'),
+('{superlative} {cuisine} {location}'),
+('{superlative} {location} {nouns}'),
+('{superlative} {nouns} near me'),
+('{superlative} {cuisine} {nouns} near me'),
+('{superlative} {cuisine} {nouns} {location}'),
+('{superlative} {cuisine} {nouns} in {location}'),
+('{superlative} {nouns} in {location}'),
+('{superlative} {meal_type} in {location}'),
+('{superlative} {meal_type} {location}'),
+('{superlative} {nouns} {location}'),
+('{nouns} with {feature}'),
+('{nouns} with {feature} near me'),
+--('{nouns} with {feature} {location}'),
+--('{superlative} {feature} {nouns} {location}'),
+('{feature} {nouns} {location}'),
+('{nouns} near me'),
+('{nouns}'),
+('{cuisine}'),
+('{meal_type}'),
+('{nouns} in {location} with {feature}'),
+('{location} {nouns}'),
+('{location} {meal_type}'),
+('{nouns} {location}'),
+('{nouns} near {location}'),
+('{nouns} booking {location}'),
+('{nouns} reservation {location}'),
+('{meal_type} {location}'),
+('{meal_type} in {location}'),
+('{holiday} {location}'),
+('{holiday} {nouns} {location}'),
+--('{superlative} {holiday} {nouns} {location}'),
+('{location} {holiday}'),
+('{location} {superlative} {noun}'),
+('{holiday} {meal_type} {location}'),
+('{holiday} {meal_type} {location} 2022'),
+('{holiday} {meal_type} near me')
+
+;
+
+
+DROP TABLE IF EXISTS feature;
+CREATE TABLE feature (feature string);
+INSERT INTO feature
+VALUES
+('outdoor dining'),
+('fine dining'),
+('rooftop dining'),
+('patio dining'),
+('outdoor'),
+('outdoor seating'),
+('rooftop'),
+('with a view')
+
+;
+DROP TABLE IF EXISTS superlative;
+CREATE TABLE superlative (superlative string);
+INSERT INTO superlative
+VALUES
+('New'),
+('Best'),
+('Cheapest'),
+('Quickest'),
+('Open'),
+('Top'),
+('Great'),
+('Top 10'),
+('Authentic'),
+('Nice'),
+('good'),
+('quirky'),
+('top rated'),
+('cheap'),
+('michelin')
+
+;
+DROP TABLE IF EXISTS nouns;
+CREATE TABLE nouns (nouns string);
+INSERT INTO nouns
+VALUES
+('Restaurants'),
+('Places to eat'),
+('resturants'),
+('Book a Table'),
+('Dining'),
+('Restaurant'),
+('eating out'),
+('fine dining'),
+('where to eat'),
+('food places'),
+('food'),
+('restaurant booking')
+
+;
+DROP TABLE IF EXISTS cuisine;
+CREATE TABLE cuisine (cuisine string);
+INSERT INTO cuisine
+VALUES
+('sushi'),
+('steakhouse'),
+('steak'),
+('seafood'),
+('italian'),
+('japanese'),
+('french'),
+('mexican'),
+('thai'),
+('american'),
+('british'),
+('indian'),
+('spanish'),
+('tapas'),
+('pizzeria'),
+('greek'),
+('bbq'),
+('barbecue'),
+('grill'),
+('turkish'),
+('argentinian'),
+('burger'),
+('korean'),
+('korean bbq'),
+('mexican'),
+('moroccan'),
+('vegan'),
+('vegetarian'),
+('israeli'),
+('halal'),
+('vietnamese'),
+('asian'),
+('chicken'),
+('fish'),
+('any'),
+('5 star'),
+('fancy'),
+('family'),
+('romantic');
+
+DROP TABLE IF EXISTS meal_type;
+CREATE TABLE meal_type (meal_type string);
+INSERT INTO meal_type
+VALUES
+('meal'),
+('brunch'),
+('dinner'),
+('lunch'),
+('breakfast'),
+('sunday brunch'),
+('sunday lunch'),
+('saturday brunch'),
+('high tea'),
+('high teas'),
+('afternoon tea'),
+('eat out')
+;
+//
+//DROP TABLE IF EXISTS additional_locations;
+//CREATE TABLE additional_locations 
+//    (id float,
+//     country string,
+//     location string,
+//     final_landing_page string,
+//     english_name string);
+//INSERT INTO additional_locations
+//VALUES
+//(280,'GB','cardiff bay','https://www.opentable.co.uk/s?lang=en-gb&covers=2&metroId=3017&regionid=4251','cardiff bay'),
+//(1367,'GB','stratford upon avon','https://www.opentable.co.uk/s?lang=en-gb&covers=2&metroId=3143&regionid=4461','stratford upon avon'),
+//(894,'GB','aldwych theatre','https://www.opentable.co.uk/s?lang=en-gb&covers=2&metroId=72','aldwych theatre'),
+//(894,'GB','baker street station','https://www.opentable.co.uk/s?lang=en-gb&covers=2&metroId=72','baker street station'),
+//(894,'GB','battersea power station','https://www.opentable.co.uk/s?lang=en-gb&covers=2&metroId=72','battersea power station'),
+//(894,'GB','borough market','https://www.opentable.co.uk/s?lang=en-gb&covers=2&metroId=72','borough market'),
+//(894,'GB','central london','https://www.opentable.co.uk/s?lang=en-gb&covers=2&metroId=72','central london'),
+//(894,'GB','charing cross station','https://www.opentable.co.uk/s?lang=en-gb&covers=2&metroId=72','charing cross station'),
+//(894,'GB','clapham junction','https://www.opentable.co.uk/s?lang=en-gb&covers=2&metroId=72','clapham junction'),
+//(894,'GB','coal drops yard','https://www.opentable.co.uk/s?lang=en-gb&covers=2&metroId=72','coal drops yard'),
+//(894,'GB','euston station','https://www.opentable.co.uk/s?lang=en-gb&covers=2&metroId=72','euston station'),
+//(894,'GB','farringdon station','https://www.opentable.co.uk/s?lang=en-gb&covers=2&metroId=72','farringdon station'),
+//(894,'GB','holborn station','https://www.opentable.co.uk/s?lang=en-gb&covers=2&metroId=72','holborn station'),
+//(894,'GB','kings cross','https://www.opentable.co.uk/s?lang=en-gb&covers=2&metroId=72','kings cross'),
+//(894,'GB','kings cross station','https://www.opentable.co.uk/s?lang=en-gb&covers=2&metroId=72','kings cross station'),
+//(894,'GB','liverpool street station','https://www.opentable.co.uk/s?lang=en-gb&covers=2&metroId=72','liverpool street station'),
+//(894,'GB','london','https://www.opentable.co.uk/s?lang=en-gb&covers=2&metroId=72','london'),
+//(894,'GB','london bridge station','https://www.opentable.co.uk/s?lang=en-gb&covers=2&metroId=72','london bridge station'),
+//(894,'GB','lyceum theatre','https://www.opentable.co.uk/s?lang=en-gb&covers=2&metroId=72','lyceum theatre'),
+//(894,'GB','marylebone station','https://www.opentable.co.uk/s?lang=en-gb&covers=2&metroId=72','marylebone station'),
+//(894,'GB','oxford street','https://www.opentable.co.uk/s?lang=en-gb&covers=2&metroId=72','oxford street'),
+//(894,'GB','paddington station','https://www.opentable.co.uk/s?lang=en-gb&covers=2&metroId=72','paddington station'),
+//(894,'GB','royal albert hall','https://www.opentable.co.uk/s?lang=en-gb&covers=2&metroId=72','royal albert hall'),
+//(894,'GB','shard','https://www.opentable.co.uk/s?lang=en-gb&covers=2&metroId=72','shard'),
+//(894,'GB','the shard','https://www.opentable.co.uk/s?lang=en-gb&covers=2&metroId=72','the shard'),
+//(894,'GB','south kensington station','https://www.opentable.co.uk/s?lang=en-gb&covers=2&metroId=72','south kensington station'),
+//(894,'GB','st pancras','https://www.opentable.co.uk/s?lang=en-gb&covers=2&metroId=72','st pancras'),
+//(894,'GB','st pancras station','https://www.opentable.co.uk/s?lang=en-gb&covers=2&metroId=72','st pancras station'),
+//(894,'GB','st pauls','https://www.opentable.co.uk/s?lang=en-gb&covers=2&metroId=72','st pauls'),
+//(894,'GB','waterloo station','https://www.opentable.co.uk/s?lang=en-gb&covers=2&metroId=72','waterloo station'),
+//(894,'GB','wimbledon station','https://www.opentable.co.uk/s?lang=en-gb&covers=2&metroId=72','wimbledon station'),
+//(894,'GB','wimbledon village','https://www.opentable.co.uk/s?lang=en-gb&covers=2&metroId=72','wimbledon village'),
+//(894,'GB','city of london','https://www.opentable.co.uk/s?lang=en-gb&covers=2&metroId=72&regionid=5289','city of london'),
+//(894,'GB','camden','https://www.opentable.co.uk/s?lang=en-gb&covers=2&metroId=72&regionid=5298','camden'),
+//(894,'GB','mayfair london','https://www.opentable.co.uk/s?lang=en-gb&covers=2&metroId=72&regionid=5298','mayfair london'),
+//(894,'GB','picadilly','https://www.opentable.co.uk/s?lang=en-gb&covers=2&metroId=72&regionid=5298','picadilly'),
+//(894,'GB','piccadilly circus','https://www.opentable.co.uk/s?lang=en-gb&covers=2&metroId=72&regionid=5298','piccadilly circus'),
+//(894,'GB','sloane square','https://www.opentable.co.uk/s?lang=en-gb&covers=2&metroId=72&regionid=5316','sloane square'),
+//(894,'GB','covent garden london','https://www.opentable.co.uk/s?lang=en-gb&covers=2&metroId=72&regionid=5322','covent garden london'),
+//(894,'GB','soho london','https://www.opentable.co.uk/s?lang=en-gb&covers=2&metroId=72&regionid=5322','soho london'),
+//(894,'GB','west end','https://www.opentable.co.uk/s?lang=en-gb&covers=2&metroId=72&regionid=5322','west end'),
+//(894,'GB','west end london','https://www.opentable.co.uk/s?lang=en-gb&covers=2&metroId=72&regionid=5322','west end london'),
+//(2669,'GB','the shard','https://www.opentable.co.uk/s?latitude=51.50465&longitude=-0.08651&currentview=map&showmap=true','the shard');
+//    
+//
+
+
+drop table if exists keyword_table;
+create table keyword_table as
+
+with template_table as
+
+(
+SELECT * 
+FROM templates 
+CROSS JOIN feature 
+CROSS JOIN superlative 
+CROSS JOIN nouns 
+CROSS JOIN cuisine
+CROSS JOIN holiday
+CROSS JOIN meal_type
+)
+
+
+,english_temp as
+
+(
+  
+    SELECT distinct template,lower(english_template) english_template from 
+    
+    (
+        SELECT *, REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(template,'{cuisine}',cuisine),'{feature}',feature),'{nouns}',nouns),'{superlative}',superlative),'{meal_type}',meal_type),'{holiday}',holiday) as english_template
+        FROM template_table 
+    ) 
+    
+    WHERE template like '%location%' ORDER BY 1,2 asc
+)
+
+SELECT replace(english_template,'{location}', location) as raw_string,english_template,template,location,adgroup_name
+from english_temp 
+CROSS JOIN (SELECT *  FROM usa_locations)
+
+//UNION ALL
+//
+//SELECT distinct lower(english_template) raw_string,english_template,template,NULL as location,NULL as english_name, NULL as adgroup_name from 
+//      
+//    (
+//        SELECT *, REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(template,'{cuisine}',cuisine),'{feature}',feature),'{nouns}',nouns),'{superlative}',superlative),'{meal_type}',meal_type),'{holiday}',holiday) as english_template
+//        FROM template_table 
+//    ) 
+//    
+//    WHERE template NOT like '%location%' ;
+    
+    --filter keyword table by best templates (ie. those that account for 93% of matched spend (about 70% overall)), and combine with manually uploaded adgroups table from vertica. 
+
+
+
+drop table if exists filtered_keyword_table;
+create table filtered_keyword_table as
+SELECT lower(a.raw_string) raw_string,location,english_template,english_name,template,adgroup_name--,b.adgroup_id,b.account_id,b.campaign_id,id
+FROM keyword_table a 
+--LEFT JOIN dhaslop_new_content_adgroups b on lower(b.adgroup_name)=lower(CONCAT(a.english_name,'_',a.id))
+WHERE english_template IN 
+
+('restaurants near {location}'	,
+'places to eat near {location}'	,
+'restaurant near {location}'	,
+'{location} restaurants'	,
+'{location} restaurant'	,
+'food near {location}'	,
+'restaurants {location}'	,
+'where to eat near {location}'	,
+'italian restaurants near {location}'	,
+'italian restaurant near {location}'	,
+'restaurant {location}'	,
+'places to eat {location}'	,
+'{location} places to eat'	,
+'restaurants in {location}'	,
+'restaurant in {location}'	,
+'resturants near {location}'	,
+'places to eat in {location}'	,
+'best restaurants {location}'	,
+'{location} food'	,
+'indian restaurant near {location}'	,
+'indian restaurants near {location}'	,
+'food {location}'	,
+'family restaurants near {location}'	,
+'brunch {location}'	,
+'pre theatre dinner {location}'	,
+'{location} lunch'	,
+'where to eat {location}'	,
+'food in {location}'	,
+'food places near {location}'	,
+'steak restaurants near {location}'	,
+'italian restaurant {location}'	,
+'{location} brunch'	,
+'{location} resturants'	,
+'{location} dinner'	,
+'halal restaurants near {location}'	,
+'best restaurants in {location}'	,
+'lunch {location}'	,
+'indian restaurant {location}'	,
+'breakfast {location}'	,
+'{location} breakfast'	,
+'vegan restaurants near {location}'	,
+'vegetarian restaurants near {location}'	,
+'dinner {location}'	,
+'sushi {location}'	,
+'japanese restaurant {location}'	,
+'best restaurant {location}'	,
+'where to eat in {location}'	,
+'best places to eat {location}'	,
+'tapas {location}'	,
+'japanese restaurant near {location}'	,
+'french restaurant {location}'	,
+'resturants in {location}'	,
+'resturants {location}'	,
+'italian restaurants {location}'	,
+'{location} best restaurants'	,
+'thai restaurant {location}'	,
+'outdoor dining {location}'	,
+'italian {location}'	,
+'{location} food places'	,
+'breakfast in {location}'	,
+'fish restaurant {location}'	,
+'lunch in {location}'	,
+'best {location} restaurants'	,
+'{location} dining'	,
+'{location} where to eat'	,
+'brunch in {location}'	,
+'sunday lunch {location}'	,
+'steak restaurant {location}'	,
+'steak {location}'	,
+'indian restaurants {location}'	,
+'{location} italian restaurant'	,
+'turkish restaurant {location}'	,
+'best breakfast {location}'	,
+'good restaurants {location}'	,
+'dinner in {location}'	,
+'good restaurants in {location}'	,
+'high tea {location}'	,
+'best restaurant in {location}'	,
+'italian restaurants in {location}'	,
+'best places to eat in {location}'	,
+'nice restaurants in {location}'	,
+'steakhouse {location}'	,
+'sushi restaurant {location}'	,
+'best brunch {location}'	,
+'{location} indian restaurant'	,
+'thai restaurants near {location}'	,
+'italian restaurant in {location}'	,
+'top restaurants {location}'	,
+'steak restaurants {location}'	,
+'{location} italian restaurants'	,
+'british restaurant near {location}'	,
+'vegan restaurants {location}'	,
+'new restaurants {location}'	,
+'outdoor restaurants {location}'	,
+'best food in {location}'	,
+'best lunch {location}'	,
+'vegetarian restaurant {location}'	,
+'cheap restaurants {location}'	,
+'greek restaurant {location}'	,
+'best food {location}'	,
+'nice restaurants {location}'	,
+'top restaurants in {location}'	,
+'eating out {location}'	,
+'tapas restaurant {location}'	,
+'food places {location}'	,
+'indian restaurant in {location}'	,
+'eating out in {location}'	,
+'halal restaurants {location}'	,
+'indian food {location}'	,
+'thai restaurant near {location}'	,
+'vegetarian restaurants {location}'	,
+'{location} french restaurant'	,
+'korean restaurant {location}'	,
+'{location} high tea'	,
+'{location} restaurant booking'	,
+'dining near {location}'	,
+'dining {location}'	,
+'{location} steak restaurants'	,
+'restaurants in {location} with outdoor seating'	,
+'italian in {location}'	,
+'eating out near {location}'	,
+'{location} indian restaurants'	,
+'tapas in {location}'	,
+'thai restaurant in {location}'	,
+'{location} japanese restaurant'	,
+'thai restaurants {location}'	,
+'best lunch in {location}'	,
+'good food {location}'	,
+'turkish restaurant near {location}'	,
+'fine dining {location}'	,
+'{location} best food'	,
+'halal food near {location}'	,
+'best brunch in {location}'	,
+'korean restaurant near {location}'	,
+'vegan restaurant {location}'	,
+'thai restaurants in {location}'	,
+'halal restaurant {location}'	,
+'halal restaurants in {location}'	,
+'thai {location}'	,
+'french restaurant near {location}'	,
+'asian restaurants near {location}'	,
+'burger restaurant {location}'	,
+'{location} halal restaurants'	,
+'{location} thai restaurant'	,
+'greek restaurant near {location}'	,
+'indian {location}'	,
+'mexican restaurant {location}'	,
+'{location} book a table'	,
+'top {location} restaurants'	,
+'best italian restaurants {location}'	,
+'{location} sunday lunch'	,
+'thai in {location}'	,
+'sushi restaurants {location}'	,
+'{location} top restaurants'	,
+'romantic restaurants {location}'	,
+'fish restaurants {location}'	,
+'romantic restaurants near {location}'	,
+'argentinian restaurant {location}'	,
+'{location} fine dining'	,
+'japanese {location}'	,
+'rooftop restaurants {location}'	,
+'steak restaurant near {location}'	,
+'best {location} restaurant'	,
+'japanese restaurant in {location}'	,
+'new restaurant {location}'	,
+'food places in {location}'	,
+'best italian {location}'	,
+'good places to eat in {location}'	,
+'{location} vegan restaurants'	,
+'fish restaurant near {location}'	,
+'japanese restaurants {location}'	,
+'restaurant deals {location}'	,
+'halal places to eat near {location}'	,
+'asian restaurant {location}'	,
+'indian food near {location}'	,
+'italian food {location}'	,
+'moroccan restaurant {location}'	,
+'french restaurant in {location}'	,
+'fish restaurants near {location}'	,
+'new {location} restaurants'	,
+'korean bbq {location}'	,
+'japanese food {location}'	,
+'best indian {location}'	,
+'halal food {location}'	,
+'new restaurants in {location}'	,
+'{location} indian food'	,
+'{location} eating out'	,
+'japanese restaurants near {location}'	,
+'turkish restaurants {location}'	,
+'greek restaurants {location}'	,
+'dining in {location}'	,
+'cheap food {location}'	,
+'{location} tapas restaurant'	,
+'french restaurants {location}'	,
+'vegan food {location}'	,
+'{location} steak restaurant'	,
+'halal food in {location}'	,
+'sushi in {location}'	,
+'halal restaurant near {location}'	,
+'spanish restaurant {location}'	,
+'{location} thai restaurants'	,
+'{location} seafood restaurants'	,
+'cheap places to eat {location}'	,
+'vegetarian restaurant near {location}'	,
+'fish {location}'	,
+'sunday brunch {location}'	,
+'book a table {location}'	,
+'fish restaurant in {location}'	,
+'{location} fish restaurant'	,
+'indian restaurants in {location}'	,
+'{location} fish restaurants'	,
+'good {location} restaurants'	,
+'top 10 {location} restaurants'	,
+'vegan food near {location}'	,
+'steak restaurants in {location}'	,
+'{location} family restaurants'	,
+'best resturants in {location}'	,
+'best indian restaurant {location}'	,
+'japanese restaurants in {location}'	,
+'indian in {location}'	,
+'pre theatre {location}'	,
+'american restaurants {location}'	,
+'{location} sushi restaurants'	,
+'tapas restaurants {location}'	,
+'{location} seafood restaurant'	,
+'{location} new restaurants'	,
+'{location} best places to eat'	,
+'asian food {location}'	,
+'vegetarian food {location}'	,
+'christmas dinner {location}'	,
+'seafood restaurants in {location}'	,
+'new restaurant in {location}'	,
+'fish in {location}'	,
+'seafood restaurant {location}'	,
+'outdoor restaurant {location}'	,
+'turkish restaurants in {location}'	,
+'tapas restaurant in {location}'	,
+'turkish food {location}'	,
+'halal food places near {location}'	,
+'turkish restaurant in {location}'	,
+'asian restaurant near {location}'	,
+'asian restaurants {location}'	,
+'best breakfast in {location}'	,
+'nice places to eat in {location}'	,
+'seafood {location}'	,
+'greek food {location}'	,
+'great restaurants in {location}'	,
+'new italian restaurant in {location}'	,
+'best {location} food'	,
+'cheap lunch {location}'	,
+'{location} good restaurants'	,
+'burger {location}'	,
+'vegan restaurant near {location}'	,
+'good places to eat {location}'	,
+'good restaurant {location}'	,
+'spanish restaurants {location}'	,
+'good restaurant in {location}'	,
+'best sushi {location}'	,
+'mexican food {location}'	,
+'rooftop restaurant {location}'	,
+'{location} tapas restaurants'	,
+'{location} sunday brunch'	,
+'cheap restaurants in {location}'	,
+'family restaurants {location}'	,
+'vietnamese restaurant {location}'	,
+'best dinner {location}'	,
+'{location} turkish restaurant'	,
+'halal restaurant in {location}'	,
+'nice restaurant in {location}'	,
+'sushi restaurants near {location}'	,
+'vegetarian restaurants in {location}'	,
+'mexican restaurant near {location}'	,
+'christmas lunch {location}'	,
+'greek restaurants in {location}'	,
+'sunday lunch in {location}'	,
+'thai food {location}'	,
+'fish restaurants in {location}'	,
+'vegan restaurants in {location}'	,
+'nice places to eat {location}'	,
+'moroccan restaurant near {location}'	,
+'new {location} restaurant'	,
+'{location} vegan restaurant'	,
+'{location} halal food'	,
+'cheap {location} restaurants'	,
+'best asian restaurant in {location}'	,
+'burger restaurants near {location}'	,
+'best asian restaurants {location}'	,
+'vegetarian {location}'	) ;
+
+SELECT * FROM filtered_keyword_table
+
+//
+//SELECT distinct template, english_template from keyword_table WHERE english_template IN ('{location} restaurants','restaurants {location}','restaurants in {location}','best restaurants {location}','restaurants near {location}','best restaurants in {location}','places to eat {location}'
+// ,'places to eat in {location}','restaurant {location}','{location} restaurant','book a table {location}','brunch {location}','nice restaurants {location}','italian restaurants {location}','restaurants {location} city centre'
+// ,'restaurants in {location} city centre','best places to eat in {location}','best {location} restaurants','restaurant in {location}','resturants in {location}','top restaurants {location}','best places to eat {location}'
+// ,'best restaurant {location}','where to eat in {location}','best restaurant in {location}','dinner in {location}','nice restaurants in {location}','dinner {location}','good restaurants {location}','resturants {location}'
+// ,'top restaurants in {location}','{location} places to eat','{location} restaurants city centre','{location} resturants','fine dining {location}','afternoon tea {location}','pre theatre dinner {location}','brunch in {location}'
+// ,'vegan restaurants {location}','italian restaurant {location}','good restaurants in {location}','lunch in {location}','where to eat {location}','steak restaurants {location}','{location} dinner','{location} city centre restaurants'
+// ,'romantic restaurants {location}','lunch {location}','restaurant near {location}','top {location} restaurants','sunday lunch {location}','places to eat near {location}','{location} brunch','places to eat in {location} city centre'
+// ,'tapas {location}','restaurant booking {location}','fancy restaurants {location}','{location} food','italian restaurants in {location}','italian {location}','places to eat {location} city centre','sushi {location}','food {location}'
+// ,'nice places to eat in {location}','indian restaurant {location}','best italian restaurants {location}','korean bbq {location}','nice places to eat {location}','best indian restaurant {location}','best vegan restaurants {location}'
+// ,'{location} italian restaurants','vegan restaurant {location}','steakhouse {location}','steak restaurant {location}','food in {location}','best resturants in {location}','top 10 restaurants in {location}','japanese restaurant {location}'
+// ,'eating out in {location}','christmas lunch {location}','good places to eat in {location}','{location} restaurant booking','christmas day lunch {location} 2022','{location} dining','vegetarian restaurants {location}','book a table in {location}'
+// ,'rooftop restaurants {location}','good places to eat {location}','{location} lunch','christmas day dinner {location}','top 10 restaurants {location}','christmas day lunch {location}','fine dining in {location}','sushi restaurants {location}'
+// ,'asian restaurant {location}','restaurant {location} city centre','breakfast {location}','vegan {location}','family restaurants {location}','great restaurants {location}','nice restaurant {location}','eating out {location}','steak {location}'
+// ,'italian restaurants near {location}','best brunch {location}','resturants near {location}','italian in {location}','{location} steak restaurants','cheap restaurants {location}','top places to eat in {location}','best resturants {location}'
+// ,'korean restaurant {location}','indian restaurants {location}','dining in {location}','best sushi {location}','best japanese restaurant {location}','best lunch {location}','great restaurants in {location}','sunday brunch {location}'
+// ,'italian restaurant in {location}','{location} fine dining','best steak restaurants {location}','{location} book a table','restaurant deals {location}','outdoor dining {location}','eat out {location}','asian restaurants {location}'
+// ,'sunday lunch in {location}','fancy restaurants in {location}','vegan restaurants in {location}','best food in {location}','sushi in {location}','food places in {location}','food places {location}','best steakhouse {location}'
+// ,'thai restaurant {location}','{location} afternoon tea','japanese restaurants {location}','vegan food {location}','michelin restaurants {location}','{location} where to eat','breakfast in {location}','best lunch in {location}'
+// ,'best vegetarian restaurants {location}','french restaurant {location}','{location} vegan restaurants','best brunch in {location}','tapas restaurant {location}','best italian restaurants in {location}','seafood restaurant {location}'
+// ,'high tea {location}','where to eat near {location}','best food {location}','sushi restaurant {location}','pre theatre {location}','steak in {location}','fish restaurant {location}','dining {location}','{location} food places'
+// ,'restaurant in {location} city centre','new restaurants {location}','steak restaurants in {location}','tapas in {location}','romantic restaurants in {location}','best italian restaurant {location}','nice restaurant in {location}'
+// ,'good {location} restaurants','afternoon tea in {location}','top restaurant {location}','where to eat in {location} city centre','christmas lunch {location} 2022','eat out in {location}','good food {location}','pre theatre dining {location}'
+// ,'best indian restaurants {location}','indian restaurants in {location}','good restaurant {location}','outdoor restaurants {location}','italian restaurant near {location}','food near {location}','top places to eat {location}'
+// ,'best asian restaurants {location}','christmas dinner {location} 2022','{location} italian restaurant','mexican restaurants {location}','best tapas {location}','best sushi restaurants {location}','best italian {location}'
+// ,'great places to eat in {location}','fine dining restaurants {location}','christmas day dinner {location} 2022','best dinner {location}','top italian restaurants {location}','nice {location} restaurants','best dinner in {location}'
+// ,'vegetarian restaurant {location}','french restaurants {location}','good restaurant in {location}','{location} eating out')
+
+//
+//UNION ALL
+//
+//SELECT distinct template,english_template from filtered_keyword_table
