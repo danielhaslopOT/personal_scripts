@@ -1,0 +1,885 @@
+select * from pma.f_opentable_fct_reservation limit 1
+
+SELECT adwords.date,adwords.criteria_id,adwords.adgroup_id,resi.res_id
+FROM otpma.f_adwords_revenue adwords 
+LEFT JOIN pma.f_opentable_fct_reservation resi ON resi.res_id=adwords.criteria_id
+WHERE date='2021-09-01'
+
+SELECT * FROM sem_dev.dhaslop_account_categories LIMIT 10;
+
+SELECT datemade,count(*) rows,count(distinct resid) as resid,count(distinct res_id) as res_id,count(distinct sessionid) sessionid FROM pma.f_opentable_fct_reservation 
+where datemade >= '2021-09-01' and isbillableorpending != 0 
+GROUP BY datemade ORDER by datemade desc
+-- 'seated revenue = non cancelled'
+
+
+
+filter: ppc_g and display
+
+
+adwords_revenue -> f_opentable_t_sessionstart -> opentable_fct
+
+session_start->fct_reseevation
+
+SELECT * FROM otpma.d_adwords_adgroup where adgroup_id=58067025046
+SELECT * FROM otpma.d_adwords_Account where account_id=9505889835
+with 
+
+raw_data as 
+
+(
+
+select 
+date
+,sessionid
+, CASE WHEN REGEXP_SUBSTR(landingpage, '^.*aid(=|%3D)([0-9]*\d{10,12})', 1, 1, '', 2) != '' THEN REGEXP_SUBSTR(landingpage, '^.*aid(=|%3D)([0-9]*\d{10,12})', 1, 1, '', 2)::INT ELSE NULL END AS adgroup_id 
+, CASE WHEN REGEXP_SUBSTR(landingpage, '^.*kwd-([0-9]*)', 1, 1, '', 1) != '' THEN REGEXP_SUBSTR(landingpage, '^.*kwd-([0-9]*)', 1, 1, '', 1)::INT ELSE NULL END AS keyword_id 
+, CASE WHEN REGEXP_SUBSTR(landingpage, '(&|\?)cmid=([0-9]*)', 1, 1, '', 2) != '' THEN REGEXP_SUBSTR(landingpage, '(&|\?)cmid=([0-9]*)', 1, 1, '', 2)::INT ELSE NULL END AS campaign_id 
+, CASE WHEN REGEXP_SUBSTR(landingpage, '^.*ref=([0-9]*)', 1, 1, '', 1) != '' THEN REGEXP_SUBSTR(landingpage, '^.*ref=([0-9]*)', 1, 1, '', 1)::INT ELSE NULL END AS ref_id 
+, CASE WHEN REGEXP_SUBSTR(landingpage, '(&|\?)cid=([0-9]*)', 1, 1, '', 2) != '' THEN REGEXP_SUBSTR(landingpage, '(&|\?)cid=([0-9]*)', 1, 1, '', 2)::INT ELSE NULL END AS creative_id 
+, CASE WHEN REGEXP_SUBSTR(landingpage, '^.*aud-([0-9]*)', 1, 1, '', 1) != '' THEN REGEXP_SUBSTR(landingpage, '^.*aud-([0-9]*)', 1, 1, '', 1)::INT ELSE NULL END AS audience_id
+, CASE WHEN REGEXP_SUBSTR(landingpage, '(&|\?)nw=([a-z])', 1, 1, '', 2) != '' THEN REGEXP_SUBSTR(landingpage, '(&|\?)nw=([a-z])', 1, 1, '', 2) ELSE NULL END AS network 
+, CASE WHEN REGEXP_SUBSTR(landingpage, '(&|\?)sp=([^&]*)', 1, 1, 'i', 2) != '' THEN REGEXP_SUBSTR(landingpage, '(&|\?)sp=([^&]*)', 1, 1, 'i', 2)ELSE NULL END AS sp
+, CASE WHEN landingpage ILIKE '%sp=ppc_g_%' THEN 1 ELSE 0 END as ppc_check
+from pma.f_opentable_t_sessionstart a
+where (landingpage ILIKE '%sp=ppc_g_%') AND date ='2021-09-01' 
+
+) 
+
+,
+
+conversions as
+
+(
+SELECT 
+datemade
+,COUNT(DISTINCT anonymousid) as distinct_users
+,COUNT(*) as gross_trans
+,SUM(CASE WHEN isbillableorpending='true' then 1 else 0 END) as nett_trans
+,sum(revenue_usd) as gross_revenue_usd
+,SUM(CASE WHEN isbillableorpending='true' then revenue_usd else 0 END) as nett_revenue_usd
+FROM pma.f_opentable_fct_reservation b
+LEFT JOIN raw_data a on b.sessionid=a.sessionid
+LEFT JOIN otpma.d_adwords_adgroup c on c.adgroup_id=a.adgroup_id
+LEFT JOIN otpma.d_adwords_campaign d on d.campaign_id=a.campaign_id
+WHERE a.keyword_id=12214017363 AND a.adgroup_id=99978792179 and b.datemade >='2021-04-01' AND isbillableorpending=1
+GROUP BY 1
+)
+
+,
+
+
+--insession revenue by adgroup,campaign,account,etc (Search, DSA, no OLA records in )
+
+
+
+SELECT * FROM pma.f_opentable_t_sessionstart a 
+WHERE landingpage='https://www.opentable.ie/restaurant/profile/215652?lang=EN&ref=18020&sp=ppc_g_ie_restaurantscmid=14655205354&aid=127540455557&tid=kwd-1360783242933&locp=1007850&loci=&mt=&nw=g&d=m&cid=547278379185&pos=&gclid=EAIaIQobChMIhoKU5a-a9AIV84BQBh33-QxjEAAYASAAEgI8lvD_BwE'
+AND date='2021-11-15'
+
+
+SELECT * FROM otpma.d_a
+
+SELECT * FROM otpma.d_adwords_adgroup where adgroup_id=131075158281
+
+SELECT a.*,account_name FROM 
+(
+SELECT date,account_id,sum(impressions) imps, sum(clicks) clicks, sum(cost_local*conversion_rate) cost_usd FROM otpma.f_adwords_performance_api a 
+LEFT JOIN bi_view.d_currency_rate b ON b.datestamp=a.date AND b.currency_code=a.currency_code 
+WHERE date='2021-10-01' GROUP BY 1,2
+UNION
+SELECT date,account_id,sum(impressions) imps, sum(clicks) clicks, sum(cost_usd) cost_usd FROM otpma.f_adwords_local_campaign_performance a
+WHERE date='2021-10-01' GROUP BY 1,2
+UNION
+SELECT date,account_id,sum(impressions) imps, sum(clicks) clicks, sum(cost_local*conversion_rate) cost_usd FROM otpma.f_adwords_dsa_api a
+LEFT JOIN bi_view.d_currency_rate b ON b.datestamp=a.date AND b.currency_code=a.currency_code 
+WHERE date='2021-10-01' GROUP BY 1,2
+) a LEFT JOIN otpma.d_adwords_account c on c.account_id=a.account_id ORDER BY account_name asc
+
+                --ACCOUNT GOOGLE STATS
+                CREATE OR REPLACE VIEW sem_dev.dhaslop_account_spend AS
+                SELECT YEAR(a.date)*100+MONTH(a.date) yyyymm, YEAR(a.date) as yyyy, CASE WHEN MONTH(a.date)<=9 THEN 1 else 0 END as ytd
+                , a.*,c.account_name,d.category,d.product,d.device,d.country,d.language,d.sem_category
+                ,CASE WHEN a.date >= CURRENT_DATE() - INTEGER '365' THEN 1 ELSE 0 END as ltm
+                 FROM  (
+                SELECT date,account_id,sum(impressions) imps, sum(clicks) clicks, sum(cost_usd) cost_usd, sum(revenue_usd) insession_revenue_usd, sum(reservations) insession_reservations
+                FROM otpma.f_adwords_performance_campaign_all_channels a  WHERE date>='2019-01-01' AND network='g' GROUP BY 1,2 ) a 
+                LEFT JOIN otpma.d_adwords_account c on c.account_id=a.account_id 
+                LEFT JOIN sem_dev.dhaslop_account_categories d on d.account_id=a.account_id
+                ORDER BY c.account_name asc
+                                
+                SELECT * FROM (SELECT country,sem_category,sum(cost_usd) cost, sum(cost_usd)/NULLIF(sum(clicks),0) as cpc, sum(reservations)/NULLIF(sum(clicks),0) as cnr from sem_dev.dhaslop_account_spend where yyyy='2021' and ytd=1 and sem_category IN ('Restaurant','NonBrand','Competitor') GROUP BY 1,2) a WHERE cpc is not null or cnr is not null
+
+
+select from otpma.f_
+
+
+
+
+
+
+
+SELECT DATE '2001-09-28', DATE '2001-09-28' - INTEGER '365';
+
+SELECT account_id,account_name,sum(cost_usd) as spend from sem_dev.dhaslop_account_spend where yyyy=2019 AND category IS NULL group by 1,2 order by 3 desc
+
+SELECT * FROM (SELECT account_id,account_name,sum(cost_usd) cost from sem_dev.dhaslop_account_spend WHERE date >='2021-01-01' GROUP BY 1,2 order by 1 asc) a WHERE cost <> 0
+
+
+SELECT * from otpma.f_adwords_performance_campaign_all_channels LIMIT 10
+
+SELECT distinct currency_code from otpma.f_adwords_performance_api where date='2021-10-01'
+
+
+--TOP KEYWORDS
+SELECT keyword,a.adgroup_id,a.keyword_id,final_urls,sum(impressions) imps, sum(clicks) clicks, sum(cost_local*conversion_rate) cost_usd FROM otpma.f_adwords_performance_api a 
+LEFT JOIN bi_view.d_currency_rate b ON b.datestamp=a.date AND b.currency_code=a.currency_code 
+LEFT JOIN otpma.d_adwords_keyword c on c.adgroup_id=a.adgroup_id AND c.keyword_id=a.keyword_id AND account_name LIKE '% US %'
+WHERE date>='2021-10-01' GROUP BY 1,2,3,4 ORDER BY cost_usd desc
+
+SELECT * FROM otpma.d_adwords_campaign LIMIT 10
+
+SELECT a.currency_code,a.cost_local,b.conversion_rate,a.cost_local*b.conversion_rate as cost_usd FROM otpma.f_adwords_dsa_api a
+LEFT JOIN bi_view.d_currency_rate b ON b.datestamp=a.date AND b.currency_code=a.currency_code LIMIT 10
+
+CREATE SCHEMA dhaslop
+
+CREATE VIEW sem_dev.dan_haslop_test AS select * FROM pma.f_opentable_fct_reservation limit 10
+SELECT * FROM sem_dev.dan_haslop_test
+
+SELECT * from pma.f_opentable_t_sessionstart a where sessionid='6f92c24e-689c-41b2-bc99-86453b5d6566'
+
+SELECT max(date) FROM f_adwords_performance_campaign_all_channels a LIMIT 1000
+
+select * from otpma.d_adwords_keyword where keyword
+res_>session->landingpage->keyword. 
+
+
+pma.f_opentable_fct_reservation -> (sessionid) pma.f_opentable_t_sessionstart -> 
+
+SELECT * FROM otpma.f_adwords_revenue LIMIT 100
+
+
+
+use sessionstart filterd by landingpage contains PPC to get session id.
+use reservation table to match to session id. 
+Use regexp statement to filter out keywordid from sessionstart landing page. 
+
+
+
+
+
+CREATE TABLE sem_dev.dhaslop_test (name varchar(40)) 
+DROP TABLE sem_dev.dhaslop_test
+
+
+SELECT YEAR(datemade)*100+MONTH(datemade) as yyyymm, session_channel, country, device_platform, COUNT(anonymousid) as users, COUNT(*) as trans, sum(revenue_usd) as revenue, sum(revenue_usd)/count(*) as rpb
+FROM pma.f_opentable_fct_reservation a
+WHERE a.datemade >= '2006-01-01'
+GROUP BY 1,2,3,4
+
+SELECT * FROM otpma.f_adwords_search_query_api LIMIT 10
+
+SELECT campaign_name,campaign_status,count(*) keywords FROM otpma.d_adwords_keyword where final_urls like '%sp=ppc_g_Chicago_tm%'  GROUP BY 1,2
+
+SELECT distinct account_name from otpma.d_adwords_campaign where account_name like '%UK%' order by 1 asc
+
+SELECT COUNT(*) as rows FROM otpma.f_adwords_search_query_api a  LEFT JOIN otpma.d_adwords_campaign d on d.campaign_id=a.campaign_id WHERE account_name like '%UK%' and dt >= '2019-01-01'
+
+with temp_table as 
+(SELECT a.*,d.account_name FROM otpma.f_adwords_search_query_api a  
+LEFT JOIN otpma.d_adwords_campaign d on d.campaign_id=a.campaign_id 
+WHERE account_name like '%UK%' and dt >= '2021-10-01')
+
+select 
+a.account_id
+,a.campaign_id
+,a.adgroup_id
+,a.keyword_id
+,a.keyword
+,a.search_term
+,a.match_type_with_variant
+,b.account_name
+,b.campaign_name
+,final_urls
+,sum(impressions) as imps
+,sum(clicks) as clicks
+,sum(cost_local) as cost
+from temp_table a
+LEFT JOIN otpma.d_adwords_campaign b ON a.campaign_id=b.campaign_id
+LEFT JOIN otpma.d_adwords_keyword c ON c.keyword_id=a.keyword_id AND c.adgroup_id=a.adgroup_id 
+WHERE dt >='2021-10-01' AND a.account_name NOT LIKE '%DSA%' AND a.account_name NOT LIKE '%B2B%'
+ GROUP BY 1,2,3,4,5,6,7,8,9,10
+ ORDER BY cost desc
+ LIMIT 100000
+
+
+SELECT * FROM otpma.d_adwords_keyword where keyword_id=21912541964 and adgroup_id IN (107319874282,111161416008)
+
+
+SELECT * from otpma.d_adwords_keyword where keyword='restaurants near me' AND account_name LIKE '%Restaurant%' AND account_name NOT LIKE '%DSA%' and account_name NOT LIKE '%GDN%' and campaign_status='enabled' and adgroup_status='enabled' order by account_name asc
+
+SELECT 
+c.account_name
+--,c.campaign_name
+--,c.adgroup_name
+,sum(CASE WHEN date <'2021-10-01' THEN impressions*quality_score ELSE 0 END)/sum(CASE WHEN date <'2021-10-01' THEN impressions ELSE 0 END) as quality_score_pre
+,sum(CASE WHEN date >='2021-10-01' THEN impressions*quality_score ELSE 0 END)/sum(CASE WHEN date >='2021-10-01' THEN impressions ELSE 0 END) as quality_score_post
+FROM otpma.f_adwords_performance_api a
+LEFT JOIN otpma.d_adwords_adgroup c on c.adgroup_id=a.adgroup_id
+LEFT JOIN sem_dev.dhaslop_account_categories b on b.account_id=a.account_id
+WHERE date >='2019-01-01' and adgroup_name LIKE '%Exact%' and sem_category ='B2B' and impressions IS NOT NULL and quality_score IS NOT NULL
+GROUP BY 1 ORDER BY 1 DESC
+
+SELECT * FROM otpma.d_adwords_adgroup LIMIT 10 
+SELECT * FROM sem_dev.dhaslop_account_categories 
+;
+
+
+select * from otpma.d_google_ads_campaign a
+LEFT JOIN otpma.d_google_ads_account b on a.account_id=b.account_id
+where a.account_name ='O - Restaurant - DSA - All - All - CA - FR'--like '%DSA%'
+ AND a.campaign_status = 'ENABLED' 
+ 
+ 
+ 
+ ----
+ 
+ TRUNCATE TABLE  sem_dev.dhaslop_campaign_categories;
+ 
+DROP TABLE IF EXISTS sem_dev.dhaslop_campaign_categories;
+CREATE TABLE sem_dev.dhaslop_campaign_categories (
+account_id INT,
+campaign_id INT,
+sem_category VARCHAR(90));
+
+INSERT INTO
+sem_dev.dhaslop_campaign_categories (account_id,campaign_id,sem_category)
+SELECT 6131614614,17722835695,'Restaurant' UNION ALL
+SELECT 8624019640,17502836372,'Restaurant' UNION ALL
+SELECT 2281466958,17492135883,'Restaurant' UNION ALL
+SELECT 8702034950,17729597033,'Restaurant' UNION ALL
+SELECT 7277911211,17721895605,'Restaurant' UNION ALL
+SELECT 2582123105,17703507278,'Restaurant' UNION ALL
+SELECT 2870136620,17703178253,'Restaurant' UNION ALL
+SELECT 2853228188,17721731695,'Restaurant' UNION ALL
+SELECT 6086566862,17727294680,'Restaurant' UNION ALL
+SELECT 8244676043,17717674269,'Restaurant' UNION ALL
+SELECT 6131614614,17721720717,'NonBrand' UNION ALL
+SELECT 8624019640,17494367425,'NonBrand' UNION ALL
+SELECT 2281466958,17502652994,'NonBrand' UNION ALL
+SELECT 8702034950,17720940892,'NonBrand' UNION ALL
+SELECT 7277911211,17722654459,'NonBrand' UNION ALL
+SELECT 2582123105,17693345673,'NonBrand' UNION ALL
+SELECT 2870136620,17694018955,'NonBrand' UNION ALL
+SELECT 2853228188,17720704521,'NonBrand' UNION ALL
+SELECT 6086566862,17718392590,'NonBrand' UNION ALL
+SELECT 8244676043,17727047975,'NonBrand' UNION ALL
+SELECT 6131614614,1392663730,'NonBrand' UNION ALL
+SELECT 7277911211,1008598750,'NonBrand' UNION ALL
+SELECT 8702034950,1542306444,'NonBrand' UNION ALL
+SELECT 2853228188,1533729524,'NonBrand' UNION ALL
+SELECT 6086566862,1568896458,'NonBrand' UNION ALL
+SELECT 8624019640,923910155,'NonBrand' UNION ALL
+SELECT 2281466958,14484137427,'NonBrand' UNION ALL
+SELECT 3624078896,15096765546,'NonBrand' UNION ALL
+SELECT 6113091656,17305222034,'NonBrand' UNION ALL
+SELECT 2582123105,15016096798,'NonBrand' UNION ALL
+SELECT 2870136620,9577217472,'NonBrand' UNION ALL
+SELECT 8244676043,15096067395,'NonBrand' 
+ 
+ ----
+
+DROP TABLE IF EXISTS sem_dev.dhaslop_account_categories;
+CREATE TABLE sem_dev.dhaslop_account_categories ( 
+account_id INT,
+account_name VARCHAR(90),
+category VARCHAR(90),
+product VARCHAR(90),
+device VARCHAR(90),
+country VARCHAR(90),
+language VARCHAR(90),
+sem_category VARCHAR(90),
+provider VARCHAR(90));
+
+TRUNCATE TABLE  sem_dev.dhaslop_account_categories;
+
+--https://docs.google.com/spreadsheets/d/1-lrhiT_rcOFOi3uzcLhj3PYaMfUuWSLTA3BHO5mO46Q/edit#gid=0
+
+INSERT INTO 
+        sem_dev.dhaslop_account_categories (account_id,account_name,category,product,device,country,language,sem_category,provider)
+   SELECT 9398727102,'zzz_OT Mobile App','APP','Android','All','US','EN','APP','Google' UNION ALL
+SELECT 3818828882,'O - App - Android - All - All - DE - DE','APP','Android','All','DE','DE','APP','Google' UNION ALL
+SELECT 9123143351,'zzz_OT Mobile App - Display','APP','Android','All','US','EN','APP','Google' UNION ALL
+SELECT 6714690549,'O - App - Android - All - All - MX - ES','APP','Android','All','MX','ES','APP','Google' UNION ALL
+SELECT 5197254002,'O - App - Android - All - All - US - EN','APP','Android','All','US','EN','APP','Google' UNION ALL
+SELECT 5441962094,'O - App - Android - All - All - IE - EN','APP','Android','All','IE','EN','APP','Google' UNION ALL
+SELECT 3939401925,'O - App - Android - All - All - AU - EN','APP','Android','All','AU','EN','APP','Google' UNION ALL
+SELECT 4903442399,'O - App - Android - All - All - CA - EN','APP','Android','All','CA','EN','APP','Google' UNION ALL
+SELECT 5530328349,'O - App - Android - All - All - UK - EN','APP','Android','All','UK','EN','APP','Google' UNION ALL
+SELECT 5813084069,'B2B - Restaurant Marketing - DE (Legacy)','B2B','General','All','DE','DE','B2B','Google' UNION ALL
+SELECT 6794440018,'B2B - JP','B2B','General','All','JP','JP','B2B','Google' UNION ALL
+SELECT 9958933608,'B2B - Blog','B2B','General','All','US','EN','B2B','Google' UNION ALL
+SELECT 6745683125,'O - B2B - General - All - All - CA - EN _GDN','B2B','GDN','All','CA','EN','B2B','Google' UNION ALL
+SELECT 9658097341,'O - B2B - General - All - All - CA - FR _GDN','B2B','GDN','All','CA','FR','B2B','Google' UNION ALL
+SELECT 6345841833,'O - B2B - General - All - All - AU - EN _GDN','B2B','GDN','All','AU','EN','B2B','Google' UNION ALL
+SELECT 5621840970,'O - B2B - General - All - All - UK - EN _GDN','B2B','GDN','All','UK','EN','B2B','Google' UNION ALL
+SELECT 9859693319,'O - B2B - General - All - All - US - EN _GDN','B2B','GDN','All','US','EN','B2B','Google' UNION ALL
+SELECT 40072016,'B2B - CA','B2B','General','All','CA','EN','B2B','Bing' UNION ALL
+SELECT 5196891488,'O - B2B - General - All - ALL - UK - EN','B2B','General','All','UK','EN','B2B','Google' UNION ALL
+SELECT 8711019365,'B2B - IE','B2B','General','All','IE','EN','B2B','Google' UNION ALL
+SELECT 9597720459,'B2B - UK','B2B','General','All','UK','EN','B2B','Google' UNION ALL
+SELECT 145007732,'O - B2B - General - All - ALL - US - EN','B2B','General','All','US','EN','B2B','Bing' UNION ALL
+SELECT 1203323404,'B2B - MX','B2B','General','All','MX','ES','B2B','Google' UNION ALL
+SELECT 3519512273,'B2B - CA','B2B','General','All','CA','EN','B2B','Google' UNION ALL
+SELECT 151005842,'O - B2B - General - All - ALL - UK - EN','B2B','General','All','UK','EN','B2B','Bing' UNION ALL
+SELECT 1273622682,'O - B2B - General - All - ALL - MX - ES','B2B','General','All','MX','ES','B2B','Google' UNION ALL
+SELECT 2342306882,'B2B - NL','B2B','General','All','NL','NL','B2B','Google' UNION ALL
+SELECT 151006025,'O - B2B - General - All - ALL - DE - DE','B2B','General','All','DE','DE','B2B','Bing' UNION ALL
+SELECT 2172316199,'O - B2B - General - All - ALL - IE - EN','B2B','General','All','IE','EN','B2B','Google' UNION ALL
+SELECT 7165416264,'O - B2B - General - All - ALL - AU - EN','B2B','General','All','AU','EN','B2B','Google' UNION ALL
+SELECT 41072549,'B2B - UK','B2B','General','All','UK','EN','B2B','Bing' UNION ALL
+SELECT 145007980,'O - B2B - General - All - ALL - MX - ES','B2B','General','All','MX','ES','B2B','Bing' UNION ALL
+SELECT 151005849,'O - B2B - General - All - ALL - IE - EN','B2B','General','All','IE','EN','B2B','Bing' UNION ALL
+SELECT 1091541294,'O - B2B - General - All - ALL - DE - DE','B2B','General','All','DE','DE','B2B','Google' UNION ALL
+SELECT 135095492,'O - B2B - General - All - ALL - AU - EN','B2B','General','All','AU','EN','B2B','Bing' UNION ALL
+SELECT 6969810368,'O - B2B - General - All - ALL - CA - FR','B2B','General','All','CA','FR','B2B','Google' UNION ALL
+SELECT 40071953,'B2B - US','B2B','General','All','US','EN','B2B','Bing' UNION ALL
+SELECT 3715306011,'O - B2B - General - All - ALL - CA - EN','B2B','General','All','CA','EN','B2B','Google' UNION ALL
+SELECT 4590442738,'B2B - US','B2B','General','All','US','EN','B2B','Google' UNION ALL
+SELECT 6811807568,'B2B - ES','B2B','General','All','ES','ES','B2B','Google' UNION ALL
+SELECT 9314115267,'B2B - AU','B2B','General','All','AU','EN','B2B','Google' UNION ALL
+SELECT 145007731,'O - B2B - General - All - ALL - CA - EN','B2B','General','All','CA','EN','B2B','Bing' UNION ALL
+SELECT 3733285692,'O - B2B - General - All - ALL - US - EN','B2B','General','All','US','EN','B2B','Google' UNION ALL
+SELECT 5720287867,'B2B - DE','B2B','General','All','DE','DE','B2B','Google' UNION ALL
+SELECT 6230037471,'zzz_DE TM','B2C','General','All','DE','DE','Brand','Google' UNION ALL
+SELECT 4122002925,'zzz_OTG - US - TM','Giftcard','General','All','US','EN','Brand','Google' UNION ALL
+SELECT 4183219073,'zzz_MX TM','Restaurant','General','All','MX','ES','Brand','Google' UNION ALL
+SELECT 7457695732,'zzz_DE Request Bookings','B2C','General','All','DE','DE','Brand','Google' UNION ALL
+SELECT 1775842002,'zzz_OTG - UK - TM','Giftcard','General','All','UK','EN','Brand','Google' UNION ALL
+SELECT 1239798221,'zzz_US TM','B2C','General','All','US','EN','Brand','Google' UNION ALL
+SELECT 3028556883,'bookarestaurant.com','B2C','General','All','US','EN','Brand','Google' UNION ALL
+SELECT 6469688659,'OpenTable Germany','B2C','General','All','DE','DE','Brand','Google' UNION ALL
+SELECT 9143069251,'OpenTable UK CPI','B2C','General','All','UK','DE','Brand','Google' UNION ALL
+SELECT 1507580820,'OpenTable Japan(JPY)','B2C','General','All','JP','JP','Brand','Google' UNION ALL
+SELECT 9308965932,'zzz_UK Request Bookings','B2C','General','All','UK','EN','Brand','Google' UNION ALL
+SELECT 2519793408,'OpenTable UK YouTube','B2C','YouTube','All','UK','EN','Brand','Google' UNION ALL
+SELECT 6105792259,'OpenTable CPBooking UK','B2C','General','All','UK','EN','Brand','Google' UNION ALL
+SELECT 8894471085,'Opentable YouTube US','B2C','YouTube','All','US','EN','Brand','Google' UNION ALL
+SELECT 9907382810,'[End]OpenTable Japan','B2C','General','All','JP','JP','Brand','Google' UNION ALL
+SELECT 4199801125,'zzz_UK TM','B2C','General','All','US','EN','Brand','Google' UNION ALL
+SELECT 8439555735,'zzz_US Display PRSP','B2C','GDN','All','US','EN','Brand','Google' UNION ALL
+SELECT 2740116770,'IE Brand','Brand','General','All','IE','EN','Brand','Google' UNION ALL
+SELECT 7348828303,'O - Brand - General - All - All - US - EN _YT','Brand','General','All','US','EN','Brand','Google' UNION ALL
+SELECT 40071941,'CA Brand','Brand','General','All','CA','EN','Brand','Bing' UNION ALL
+SELECT 135094782,'AU Brand','Brand','General','All','AU','EN','Brand','Bing' UNION ALL
+SELECT 2159482416,'JP Brand','Brand','General','All','JP','JA','Brand','Google' UNION ALL
+SELECT 9505889835,'US Brand','Brand','General','All','US','EN','Brand','Google' UNION ALL
+SELECT 3444119795,'IT Brand','Brand','General','All','IT','IT','Brand','Google' UNION ALL
+SELECT 8757779520,'AU Brand','Brand','General','All','AU','EN','Brand','Google' UNION ALL
+SELECT 151005413,'ES Brand','Brand','General','All','ES','ES','Brand','Bing' UNION ALL
+SELECT 151005420,'NL Brand','Brand','General','All','NL','NL','Brand','Bing' UNION ALL
+SELECT 40072345,'AE Restaurants','Brand','General','All','AE','AR','Brand','Bing' UNION ALL
+SELECT 145003597,'MX Brand','Brand','General','All','MX','ES','Brand','Bing' UNION ALL
+SELECT 151002758,'DE Brand','Brand','General','All','DE','DE','Brand','Bing' UNION ALL
+SELECT 151002761,'UK Brand','Brand','General','All','UK','EN','Brand','Bing' UNION ALL
+SELECT 151005418,'IT Brand','Brand','General','All','IT','IT','Brand','Bing' UNION ALL
+SELECT 6660982513,'MX Brand','Brand','General','All','MX','ES','Brand','Google' UNION ALL
+SELECT 2480333055,'AE Brand','Brand','General','All','AE','AR','Brand','Google' UNION ALL
+SELECT 4780295360,'ES Brand','Brand','General','All','ES','ES','Brand','Google' UNION ALL
+SELECT 6809383979,'CA Brand','Brand','General','All','CA','EN','Brand','Google' UNION ALL
+SELECT 41072552,'IE Brand','Brand','General','All','IE','EN','Brand','Bing' UNION ALL
+SELECT 145003600,'US Brand','Brand','General','All','US','EN','Brand','Bing' UNION ALL
+SELECT 145006987,'AE Brand','Brand','General','All','AE','AR','Brand','Bing' UNION ALL
+SELECT 8416505298,'NL Brand','Brand','General','All','NL','NL','Brand','Google' UNION ALL
+SELECT 9489377905,'UK Brand','Brand','General','All','UK','EN','Brand','Google' UNION ALL
+SELECT 9959201915,'DE Brand','Brand','General','All','DE','DE','Brand','Google' UNION ALL
+SELECT 145007724,'O - Competitor - General - Desktop - ALL - CA - EN','Competitor','General','Desktop','CA','EN','Competitor','Bing' UNION ALL
+SELECT 145007726,'O - Competitor - General - Mobile - ALL - CA - EN','Competitor','General','Mobile','CA','EN','Competitor','Bing' UNION ALL
+SELECT 145007735,'O - Competitor - General - Tablet - ALL - US - EN','Competitor','General','Tablet','US','EN','Competitor','Bing' UNION ALL
+SELECT 145007754,'O - Competitor - General - Desktop - ALL - MX - ES','Competitor','General','Desktop','MX','ES','Competitor','Bing' UNION ALL
+SELECT 151005838,'O - Competitor - General - Mobile - ALL - UK - EN','Competitor','General','Mobile','UK','EN','Competitor','Bing' UNION ALL
+SELECT 151005905,'O - Competitor - General - Mobile - ALL - DE - DE','Competitor','General','Mobile','DE','DE','Competitor','Bing' UNION ALL
+SELECT 151005906,'O - Competitor - General - Tablet - ALL - DE - DE','Competitor','General','Tablet','DE','DE','Competitor','Bing' UNION ALL
+SELECT 2574571800,'O - Competitor - General - Mobile - ALL - US - EN','Competitor','General','Mobile','US','EN','Competitor','Google' UNION ALL
+SELECT 2656888409,'O - Competitor - General - Tablet - ALL - AU - EN','Competitor','General','Tablet','AU','EN','Competitor','Google' UNION ALL
+SELECT 6024069239,'O - Competitor - General - Tablet - ALL - US - EN','Competitor','General','Tablet','US','EN','Competitor','Google' UNION ALL
+SELECT 7824791754,'O - Competitor - General - Mobile - ALL - UK - EN','Competitor','General','Mobile','UK','EN','Competitor','Google' UNION ALL
+SELECT 135095490,'O - Competitor - General - Tablet - ALL - AU - EN','Competitor','General','Tablet','AU','EN','Competitor','Bing' UNION ALL
+SELECT 145007756,'O - Competitor - General - Tablet - ALL - MX - ES','Competitor','General','Tablet','MX','ES','Competitor','Bing' UNION ALL
+SELECT 5332106800,'O - Competitor - General - Mobile - ALL - MX - ES','Competitor','General','Mobile','MX','ES','Competitor','Google' UNION ALL
+SELECT 2038846650,'O - Competitor - General - Mobile - ALL - AU - EN','Competitor','General','Mobile','AU','EN','Competitor','Google' UNION ALL
+SELECT 3732879017,'O - Competitor - General - Tablet - ALL - MX - ES','Competitor','General','Tablet','MX','ES','Competitor','Google' UNION ALL
+SELECT 9405954766,'O - Competitor - General - Tablet - ALL - CA - EN','Competitor','General','Tablet','CA','EN','Competitor','Google' UNION ALL
+SELECT 145007734,'O - Competitor - General - Mobile - ALL - US - EN','Competitor','General','Mobile','US','EN','Competitor','Bing' UNION ALL
+SELECT 151005904,'O - Competitor - General - Desktop - ALL - DE - DE','Competitor','General','Desktop','DE','DE','Competitor','Bing' UNION ALL
+SELECT 7810152309,'O - Competitor - General - Mobile - ALL - DE - DE','Competitor','General','Mobile','DE','DE','Competitor','Google' UNION ALL
+SELECT 8642510609,'O - Competitor - General - Desktop - ALL - US - EN','Competitor','General','Desktop','US','EN','Competitor','Google' UNION ALL
+SELECT 9766244907,'O - Competitor - General - Tablet - ALL - IE - EN','Competitor','General','Tablet','IE','EN','Competitor','Google' UNION ALL
+SELECT 145007727,'O - Competitor - General - Tablet - ALL - CA - EN','Competitor','General','Tablet','CA','EN','Competitor','Bing' UNION ALL
+SELECT 151005837,'O - Competitor - General - Tablet - ALL - UK - EN','Competitor','General','Tablet','UK','EN','Competitor','Bing' UNION ALL
+SELECT 4183893990,'O - Competitor - General - Desktop - ALL - MX - ES','Competitor','General','Desktop','MX','ES','Competitor','Google' UNION ALL
+SELECT 9346124078,'O - Competitor - General - Mobile - ALL - IE - EN','Competitor','General','Mobile','IE','EN','Competitor','Google' UNION ALL
+SELECT 4641900527,'O - Competitor - General - Mobile - ALL - CA - EN','Competitor','General','Mobile','CA','EN','Competitor','Google' UNION ALL
+SELECT 6059250242,'O - Competitor - General - Tablet - ALL - DE - DE','Competitor','General','Tablet','DE','DE','Competitor','Google' UNION ALL
+SELECT 6233564596,'O - Competitor - General - Desktop - ALL - DE - DE','Competitor','General','Desktop','DE','DE','Competitor','Google' UNION ALL
+SELECT 8523994476,'O - Competitor - General - Tablet - ALL - UK - EN','Competitor','General','Tablet','UK','EN','Competitor','Google' UNION ALL
+SELECT 135095489,'O - Competitor - General - Mobile - ALL - AU - EN','Competitor','General','Mobile','AU','EN','Competitor','Bing' UNION ALL
+SELECT 135095491,'O - Competitor - General - Desktop - ALL - AU - EN','Competitor','General','Desktop','AU','EN','Competitor','Bing' UNION ALL
+SELECT 145007733,'O - Competitor - General - Desktop - ALL - US - EN','Competitor','General','Desktop','US','EN','Competitor','Bing' UNION ALL
+SELECT 145007755,'O - Competitor - General - Mobile - ALL - MX - ES','Competitor','General','Mobile','MX','ES','Competitor','Bing' UNION ALL
+SELECT 151005836,'O - Competitor - General - Desktop - ALL - UK - EN','Competitor','General','Desktop','UK','EN','Competitor','Bing' UNION ALL
+SELECT 2842121821,'O - Competitor - General - Desktop - ALL - AU - EN','Competitor','General','Desktop','AU','EN','Competitor','Google' UNION ALL
+SELECT 4412472639,'O - Competitor - General - Desktop - ALL - UK - EN','Competitor','General','Desktop','UK','EN','Competitor','Google' UNION ALL
+SELECT 5349994725,'O - Competitor - General - Desktop - ALL - CA - EN','Competitor','General','Desktop','CA','EN','Competitor','Google' UNION ALL
+SELECT 7326962715,'O - Competitor - General - Desktop - ALL - IE - EN','Competitor','General','Desktop','IE','EN','Competitor','Google' UNION ALL
+SELECT 4631073060,'O - Restaurant - Restaurant - Mobile - ALL - US - EN','B2C','General','Mobile','US','EN','Enterprise','Google' UNION ALL
+SELECT 1277110286,'O - Restaurant - Restaurant - Desktop - ALL - US - EN','B2C','General','Desktop','US','EN','Enterprise','Google' UNION ALL
+SELECT 1201110489,'zzz_OTG - UK - NonTM','Giftcard','General','All','UK','EN','NonBrand','Google' UNION ALL
+SELECT 5617626389,'zzz_US NonTM Restaurant Week','B2C','Restaurant Week','All','US','EN','NonBrand','Google' UNION ALL
+SELECT 5997770567,'zzz_DE POI','B2C','General','All','DE','DE','NonBrand','Google' UNION ALL
+SELECT 1553279106,'zzz_US NonTM Tier 3','B2C','General','All','US','EN','NonBrand','Google' UNION ALL
+SELECT 3293896528,'zzz_DE NonTM','B2C','General','All','DE','DE','NonBrand','Google' UNION ALL
+SELECT 2702742132,'zzz_US NonTM Tier 2','B2C','General','All','US','EN','NonBrand','Google' UNION ALL
+SELECT 9691926174,'O - Restaurant - General - All - All - AU - EN _GDN','Restaurant','GDN','All','AU','EN','NonBrand','Google' UNION ALL
+SELECT 1798039233,'zzz_NL Google Display Network','Restaurant','GDN','All','NL','NL','NonBrand','Google' UNION ALL
+SELECT 6154824938,'O - Restaurant - DSA - All - All - AE - EN','Restaurant','DSA','All','AE','EN','NonBrand','Google' UNION ALL
+SELECT 4625146959,'zzz_OTG - US - NonTM','Giftcard','General','All','US','EN','NonBrand','Google' UNION ALL
+SELECT 8242268470,'zzz_UK Restaurant Week NonTM','B2C','Restaurant Week','All','UK','EN','NonBrand','Google' UNION ALL
+SELECT 2612842734,'zzz_US POI NonTM Tier 1','B2C','General','All','US','EN','NonBrand','Google' UNION ALL
+SELECT 2775384061,'zzz_UK POI NonTM','B2C','General','All','UK','EN','NonBrand','Google' UNION ALL
+SELECT 7655790834,'zzz_US NonTM Tier 1','B2C','General','All','US','EN','NonBrand','Google' UNION ALL
+SELECT 1210245709,'zzz_US Audience','B2C','General','All','US','EN','NonBrand','Google' UNION ALL
+SELECT 7361189596,'O - Restaurant - General - All - All - UK - EN _GDN','Restaurant','GDN','All','UK','EN','NonBrand','Google' UNION ALL
+SELECT 6090084897,'O - Restaurant - General - All - All - CA - EN _GDN','Restaurant','GDN','All','CA','EN','NonBrand','Google' UNION ALL
+SELECT 9876864515,'O - Restaurant - General - All - All - ES - ES _GDN','Restaurant','GDN','All','ES','ES','NonBrand','Google' UNION ALL
+SELECT 8538116695,'O - Restaurant - General - All - All - NL - NL _GDN','Restaurant','GDN','All','NL','NL','NonBrand','Google' UNION ALL
+SELECT 5962623297,'O - Restaurant - General - All - All - DE - DE _GDN','Restaurant','GDN','All','DE','DE','NonBrand','Google' UNION ALL
+SELECT 1866956215,'US - YouTube','B2C','YouTube','All','US','EN','NonBrand','Google' UNION ALL
+SELECT 8479814640,'zzz_UK NonTM','B2C','General','All','UK','EN','NonBrand','Google' UNION ALL
+SELECT 79041647,'ZZZZ_AU NonTM','Restaurant','General','All','AU','EN','NonBrand','Bing' UNION ALL
+SELECT 145007729,'O - Restaurant - General - Mobile - ALL - CA - EN','Restaurant','General','Mobile','CA','EN','NonBrand','Bing' UNION ALL
+SELECT 151005839,'O - Restaurant - General - Desktop - ALL - UK - EN','Restaurant','General','Desktop','UK','EN','NonBrand','Bing' UNION ALL
+SELECT 151005907,'O - Restaurant - General - Desktop - ALL - DE - DE','Restaurant','General','Desktop','DE','DE','NonBrand','Bing' UNION ALL
+SELECT 1083697692,'O - Restaurant - General - Tablet - ALL - CA - EN','B2C','General','Tablet','CA','EN','NonBrand','Google' UNION ALL
+SELECT 1443134842,'O - Restaurant - DSA - All - All - NL - NL','Restaurant','DSA','All','NL','NL','NonBrand','Google' UNION ALL
+SELECT 2582123105,'O - Restaurant - DSA - All - All - MX - EN','Restaurant','DSA','All','MX','EN','NonBrand','Google' UNION ALL
+SELECT 3120519027,'O - Restaurant - General - Mobile - ALL - IE - EN','B2C','General','Mobile','IE','EN','NonBrand','Google' UNION ALL
+SELECT 3347929108,'O - Restaurant - General - All - All - US - EN _GDN','Restaurant','GDN','All','US','EN','NonBrand','Google' UNION ALL
+SELECT 5490935309,'O - Restaurant - General - Tablet - ALL - AU - EN','B2C','General','Tablet','AU','EN','NonBrand','Google' UNION ALL
+SELECT 6131614614,'O - Restaurant - DSA - All - All - AU - EN','Restaurant','DSA','All','AU','EN','NonBrand','Google' UNION ALL
+SELECT 8624019640,'O - Restaurant - DSA - All - All - CA - EN','Restaurant','DSA','All','CA','EN','NonBrand','Google' UNION ALL
+SELECT 8665560168,'O - Restaurant - General - Desktop - ALL - UK - EN','B2C','General','Desktop','UK','EN','NonBrand','Google' UNION ALL
+SELECT 9471819847,'O - Restaurant - General - Desktop - ALL - UK - EN _Generic','B2C','General','Desktop','UK','EN','NonBrand','Google' UNION ALL
+SELECT 135094783,'AU NonBrand','Restaurant','General','All','AU','EN','NonBrand','Bing' UNION ALL
+SELECT 135095488,'O - Restaurant - General - Tablet - ALL - AU - EN','Restaurant','General','Tablet','AU','EN','NonBrand','Bing' UNION ALL
+SELECT 145007730,'O - Restaurant - General - Tablet - ALL - CA - EN','Restaurant','General','Tablet','CA','EN','NonBrand','Bing' UNION ALL
+SELECT 145007736,'O - Restaurant - General - Desktop - ALL - US - EN','Restaurant','General','Desktop','US','EN','NonBrand','Bing' UNION ALL
+SELECT 145007738,'O - Restaurant - General - Tablet - ALL - US - EN','Restaurant','General','Tablet','US','EN','NonBrand','Bing' UNION ALL
+SELECT 145009854,'O - Restaurant - General - Tablet - ALL - CA - FR','Restaurant','General','Tablet','CA','FR','NonBrand','Bing' UNION ALL
+SELECT 145009855,'O - Restaurant - General - Mobile - ALL - CA - FR','Restaurant','General','Mobile','CA','FR','NonBrand','Bing' UNION ALL
+SELECT 151002762,'UK NonBrand','Restaurant','DSA','All','UK','EN','NonBrand','Bing' UNION ALL
+SELECT 2281466958,'O - Restaurant - DSA - All - All - CA - FR','Restaurant','DSA','All','CA','FR','NonBrand','Google' UNION ALL
+SELECT 2597725384,'O - Restaurant - General - Tablet - ALL - DE - DE','B2C','General','Tablet','DE','DE','NonBrand','Google' UNION ALL
+SELECT 2878238001,'O - Restaurant - General - Desktop - ALL - UK - EN _Location','B2C','General','Desktop','UK','EN','NonBrand','Google' UNION ALL
+SELECT 4964646358,'O - Restaurant - General - Tablet - ALL - MX - ES','B2C','General','Tablet','MX','ES','NonBrand','Google' UNION ALL
+SELECT 5908079872,'O - Restaurant - General - Mobile - ALL - US - EN_New','B2C','General','Mobile','US','EN','NonBrand','Google' UNION ALL
+SELECT 8702034950,'O - Restaurant - DSA - All - All - DE - DE','Restaurant','DSA','All','DE','DE','NonBrand','Google' UNION ALL
+SELECT 135095487,'O - Restaurant - General - Mobile - ALL - AU - EN','Restaurant','General','Mobile','AU','EN','NonBrand','Bing' UNION ALL
+SELECT 145007728,'O - Restaurant - General - Desktop - ALL - CA - EN','Restaurant','General','Desktop','CA','EN','NonBrand','Bing' UNION ALL
+SELECT 151005844,'O - Restaurant - General - Tablet - ALL - IE - EN','Restaurant','General','Tablet','IE','EN','NonBrand','Bing' UNION ALL
+SELECT 2474190335,'O - Restaurant - General - Desktop - ALL - CA - FR','B2C','General','Desktop','CA','FR','NonBrand','Google' UNION ALL
+SELECT 2787961601,'O - Restaurant - General - Desktop - ALL - US - EN','B2C','General','Desktop','US','EN','NonBrand','Google' UNION ALL
+SELECT 3223254299,'O - Restaurant - General - Tablet - ALL - US - EN','B2C','General','Tablet','US','EN','NonBrand','Google' UNION ALL
+SELECT 3624078896,'O - Restaurant - DSA - All - All - DE - EN','Restaurant','DSA','All','DE','EN','NonBrand','Google' UNION ALL
+SELECT 8244676043,'O - Restaurant - DSA - All - All - US - ES','Restaurant','DSA','All','US','ES','NonBrand','Google' UNION ALL
+SELECT 9618220080,'O - Restaurant - General - Mobile - ALL - DE - DE','B2C','General','Mobile','DE','DE','NonBrand','Google' UNION ALL
+SELECT 40072344,'ZZZZ_AE NonTM','Restaurant','General','All','AE','AR','NonBrand','Bing' UNION ALL
+SELECT 151002759,'DE NonBrand','Restaurant','DSA','All','DE','DE','NonBrand','Bing' UNION ALL
+SELECT 151005841,'O - Restaurant - General - Tablet - ALL - UK - EN','Restaurant','General','Tablet','UK','EN','NonBrand','Bing' UNION ALL
+SELECT 3627663131,'O - Restaurant - General - Mobile - ALL - CA - FR','B2C','General','Mobile','CA','FR','NonBrand','Google' UNION ALL
+SELECT 3976847090,'O - Restaurant - General - Mobile - ALL - CA - EN','B2C','General','Mobile','CA','EN','NonBrand','Google' UNION ALL
+SELECT 5198989127,'O - Restaurant - DSA - All - All - ES - ES','Restaurant','DSA','All','ES','ES','NonBrand','Google' UNION ALL
+SELECT 6550435591,'O - Restaurant - General - Desktop - ALL - US - EN_New','B2C','General','Desktop','US','EN','NonBrand','Google' UNION ALL
+SELECT 8183301056,'O - Restaurant - General - Tablet - ALL - CA - FR','B2C','General','Tablet','CA','FR','NonBrand','Google' UNION ALL
+SELECT 9713887145,'O - Restaurant - General - Mobile - ALL - UK - EN','B2C','General','Mobile','UK','EN','NonBrand','Google' UNION ALL
+SELECT 9808800484,'O - Restaurant - General - Mobile - ALL - MX - ES','B2C','General','Mobile','MX','ES','NonBrand','Google' UNION ALL
+SELECT 40071940,'CA NonBrand','Restaurant','DSA','All','CA','EN','NonBrand','Bing' UNION ALL
+SELECT 79041649,'ZZZZ_AU TM','Restaurant','General','All','AU','EN','NonBrand','Bing' UNION ALL
+SELECT 145003601,'US NonBrand','Restaurant','General','All','US','EN','NonBrand','Bing' UNION ALL
+SELECT 145007757,'O - Restaurant - General - Desktop - ALL - MX - ES','Restaurant','General','Desktop','MX','ES','NonBrand','Bing' UNION ALL
+SELECT 151005414,'ES NonBrand','Restaurant','General','All','ES','ES','NonBrand','Bing' UNION ALL
+SELECT 151005417,'IE NonBrand','Restaurant','General','All','IE','EN','NonBrand','Bing' UNION ALL
+SELECT 151005421,'NL NonBrand','Restaurant','General','All','NL','NL','NonBrand','Bing' UNION ALL
+SELECT 151005846,'O - Restaurant - General - Desktop - ALL - IE - EN','Restaurant','General','Desktop','IE','EN','NonBrand','Bing' UNION ALL
+SELECT 151005908,'O - Restaurant - General - Mobile - ALL - DE - DE','Restaurant','General','Mobile','DE','DE','NonBrand','Bing' UNION ALL
+SELECT 151005909,'O - Restaurant - General - Tablet - ALL - DE - DE','Restaurant','General','Tablet','DE','DE','NonBrand','Bing' UNION ALL
+SELECT 3073377748,'O - Restaurant - General - Desktop - ALL - MX - ES','B2C','General','Desktop','MX','ES','NonBrand','Google' UNION ALL
+SELECT 4825762674,'O - Restaurant - General - Desktop - ALL - AU - EN','B2C','General','Desktop','AU','EN','NonBrand','Google' UNION ALL
+SELECT 5470618825,'O - Restaurant - General - Tablet - ALL - UK - EN','B2C','General','Tablet','UK','EN','NonBrand','Google' UNION ALL
+SELECT 6086566862,'O - Restaurant - DSA - All - All - US - EN','Restaurant','DSA','All','US','EN','NonBrand','Google' UNION ALL
+SELECT 6277084848,'DE NonBrand Restaurant Weeks','B2C','Restaurant Week','All','DE','DE','NonBrand','Google' UNION ALL
+SELECT 8031764302,'O - Restaurant - DSA - All - All - JP - JA','Restaurant','DSA','All','JP','JA','NonBrand','Google' UNION ALL
+SELECT 8919092070,'O - Restaurant - General - Tablet - ALL - IE - EN','B2C','General','Tablet','IE','EN','NonBrand','Google' UNION ALL
+SELECT 145003598,'MX NonBrand','Restaurant','General','All','MX','ES','NonBrand','Bing' UNION ALL
+SELECT 145007759,'O - Restaurant - General - Tablet - ALL - MX - ES','Restaurant','General','Tablet','MX','ES','NonBrand','Bing' UNION ALL
+SELECT 2024014323,'O - Restaurant - General - Desktop - ALL - CA - EN','B2C','General','Desktop','CA','EN','NonBrand','Google' UNION ALL
+SELECT 6634822362,'O - Restaurant - General - Mobile - ALL - UK - EN _Location','B2C','General','Mobile','UK','EN','NonBrand','Google' UNION ALL
+SELECT 7277911211,'O - Restaurant - DSA - All - All - IE - EN','Restaurant','DSA','All','IE','EN','NonBrand','Google' UNION ALL
+SELECT 7660154754,'O - Restaurant - General - Mobile - ALL - AU - EN','B2C','General','Mobile','AU','EN','NonBrand','Google' UNION ALL
+SELECT 7901871074,'O - Restaurant - General - Desktop - ALL - IE - EN','B2C','General','Desktop','IE','EN','NonBrand','Google' UNION ALL
+SELECT 135095486,'O - Restaurant - General - Desktop - ALL - AU - EN','Restaurant','General','Desktop','AU','EN','NonBrand','Bing' UNION ALL
+SELECT 145003602,'O - Restaurant - Restaurant Week - All - All - US - EN','Restaurant','General','All','US','EN','NonBrand','Bing' UNION ALL
+SELECT 145007737,'O - Restaurant - General - Mobile - ALL - US - EN','Restaurant','General','Mobile','US','EN','NonBrand','Bing' UNION ALL
+SELECT 145007758,'O - Restaurant - General - Mobile - ALL - MX - ES','Restaurant','General','Mobile','MX','ES','NonBrand','Bing' UNION ALL
+SELECT 145009853,'O - Restaurant - General - Desktop - ALL - CA - FR','Restaurant','General','Desktop','CA','FR','NonBrand','Bing' UNION ALL
+SELECT 151004575,'UK NonBrand Restaurant Weeks','Restaurant','Restaurant Week','All','UK','EN','NonBrand','Bing' UNION ALL
+SELECT 151005840,'O - Restaurant - General - Mobile - ALL - UK - EN','Restaurant','General','Mobile','UK','EN','NonBrand','Bing' UNION ALL
+SELECT 151005843,'O - Restaurant - General - Mobile - ALL - IE - EN','Restaurant','General','Mobile','IE','EN','NonBrand','Bing' UNION ALL
+SELECT 2468654333,'O - Restaurant - General - Mobile - ALL - US - EN','B2C','General','Mobile','US','EN','NonBrand','Google' UNION ALL
+SELECT 2853228188,'O - Restaurant - DSA - All - All - UK - EN','Restaurant','DSA','All','UK','EN','NonBrand','Google' UNION ALL
+SELECT 2870136620,'O - Restaurant - DSA - All - All - MX - ES','Restaurant','DSA','All','MX','ES','NonBrand','Google' UNION ALL
+SELECT 5149418146,'O - Restaurant - General - Mobile - ALL - UK - EN _Generic','B2C','General','Mobile','UK','EN','NonBrand','Google' UNION ALL
+SELECT 7850055196,'O - Restaurant - General - Desktop - ALL - DE - DE','B2C','General','Desktop','DE','DE','NonBrand','Google' UNION ALL
+SELECT 9705992496,'O - Restaurant - Restaurant Week - All - All - US - EN','B2C','Restaurant Week','All','US','EN','NonBrand','Google' UNION ALL
+SELECT 6113091656,'O - Restaurant - DSA - All - All - IT - IT','Restaurant','DSA','All','IT','IT','NonBrand','Google' UNION ALL
+SELECT 8170903086,'zzz_UK TM Restaurants Old','B2C','General','All','UK','EN','Restaurant','Google' UNION ALL
+SELECT 4413467830,'zzz_US Restaurants Listings','B2C','General','All','US','EN','Restaurant','Google' UNION ALL
+SELECT 8123112101,'zzz_US Casual Restaurants','B2C','General','All','US','EN','Restaurant','Google' UNION ALL
+SELECT 7574945583,'zzz_OTG - UK - Restaurants','Giftcard','General','All','UK','EN','Restaurant','Google' UNION ALL
+SELECT 7218768234,'zzz_JP Restaurants Listing','Restaurant','General','All','JP','JP','Restaurant','Google' UNION ALL
+SELECT 7218520638,'zzz_UK Restaurants OLD','Restaurant','General','All','UK','EN','Restaurant','Google' UNION ALL
+SELECT 3105915601,'zzz_US TM Restaurants','B2C','General','All','US','EN','Restaurant','Google' UNION ALL
+SELECT 5580355076,'US Out of Network Restaurants','Restaurant','General','All','US','EN','Restaurant','Google' UNION ALL
+SELECT 9482602943,'zzz_MX Restaurants','Restaurant','General','All','MX','ES','Restaurant','Google' UNION ALL
+SELECT 4415401810,'zzz_DE Restaurants','Restaurant','General','All','DE','DE','Restaurant','Google' UNION ALL
+SELECT 9175917921,'zzz_UK Restaurants','Restaurant','General','All','UK','EN','Restaurant','Google' UNION ALL
+SELECT 145003596,'MX Restaurants','Restaurant','General','All','MX','ES','Restaurant','Bing' UNION ALL
+SELECT 151002757,'DE Restaurants','Restaurant','General','All','DE','DE','Restaurant','Bing' UNION ALL
+SELECT 151002760,'UK Restaurants','Restaurant','General','All','UK','EN','Restaurant','Bing' UNION ALL
+SELECT 1222580478,'NL Restaurants','B2C','General','All','NL','NL','Restaurant','Google' UNION ALL
+SELECT 1274815215,'O - Restaurant - OLA - All - All - MX - ES','B2C','OLA','All','MX','ES','Restaurant','Google' UNION ALL
+SELECT 5099729290,'O - Restaurant - OLA - All - All - UK - EN','B2C','OLA','All','UK','EN','Restaurant','Google' UNION ALL
+SELECT 151005415,'ES Restaurants','Restaurant','General','All','ES','ES','Restaurant','Bing' UNION ALL
+SELECT 151005419,'IT Restaurants','Restaurant','General','All','IT','IT','Restaurant','Bing' UNION ALL
+SELECT 3638630507,'O - Restaurant - OLA - All - All - DE - DE','B2C','OLA','All','DE','DE','Restaurant','Google' UNION ALL
+SELECT 7646209456,'O - Restaurant - OLA - All - All - IE - EN','B2C','OLA','All','IE','EN','Restaurant','Google' UNION ALL
+SELECT 79041648,'AU Restaurants','Restaurant','General','All','AU','EN','Restaurant','Bing' UNION ALL
+SELECT 151005422,'NL Restaurants','Restaurant','General','All','NL','NL','Restaurant','Bing' UNION ALL
+SELECT 9385088929,'CA Restaurants','B2C','General','All','CA','EN','Restaurant','Google' UNION ALL
+SELECT 40072883,'CA Restaurants','Restaurant','General','All','CA','EN','Restaurant','Bing' UNION ALL
+SELECT 2343743659,'zzz_US Restaurants','B2C','General','All','US','EN','Restaurant','Google' UNION ALL
+SELECT 7991470836,'AU Restaurants','B2C','General','All','AU','EN','Restaurant','Google' UNION ALL
+SELECT 9657444921,'O - Restaurant - OLA - All - All - AU - EN','B2C','OLA','All','AU','EN','Restaurant','Google' UNION ALL
+SELECT 3679808093,'O - Restaurant - OLA - All - All - CA - FR','B2C','OLA','All','CA','FR','Restaurant','Google' UNION ALL
+SELECT 6395099776,'ES Restaurants','B2C','General','All','ES','ES','Restaurant','Google' UNION ALL
+SELECT 8016333954,'O - Restaurant - OLA - All - All - CA - EN','B2C','OLA','All','CA','EN','Restaurant','Google' UNION ALL
+SELECT 9310630107,'UK Restaurants','B2C','General','All','UK','EN','Restaurant','Google' UNION ALL
+SELECT 41072551,'IE Restaurants','Restaurant','General','All','IE','EN','Restaurant','Bing' UNION ALL
+SELECT 3034383709,'O - Restaurant - OLA - All - All - US - EN','B2C','OLA','All','US','EN','Restaurant','Google' UNION ALL
+SELECT 5157969352,'DE Restaurants','B2C','General','All','DE','DE','Restaurant','Google' UNION ALL
+SELECT 6453926373,'JP Restaurants','B2C','General','All','JP','JA','Restaurant','Google' UNION ALL
+SELECT 9372109119,'zzz_MX Restaurants Retargeting','B2C','General','All','MX','ES','Restaurant','Google' UNION ALL
+SELECT 4736205817,'zzz_US Restaurants Test','B2C','General','All','US','EN','Restaurant','Google' UNION ALL
+SELECT 6966354183,'AE Restaurants','B2C','General','All','AE','AR','Restaurant','Google' UNION ALL
+SELECT 8624368352,'MX Restaurants','B2C','General','All','MX','ES','Restaurant','Google' UNION ALL
+SELECT 145003599,'US Restaurants','Restaurant','General','All','US','EN','Restaurant','Bing' UNION ALL
+SELECT 2559977774,'IT Restaurants','B2C','General','All','IT','IT','Restaurant','Google' UNION ALL
+SELECT 4718418160,'US Restaurants','B2C','General','All','US','EN','Restaurant','Google' UNION ALL
+SELECT 5918873616,'IE Restaurants','B2C','General','All','IE','EN','Restaurant','Google' UNION ALL
+SELECT 7483398564,'O - Takeout - OLA - All - All - US - EN','Takeout','OLA','All','US','EN','Takeout','Google' UNION ALL
+SELECT 7530083064,'US Takeout','Takeout','General','All','US','EN','Takeout','Google' UNION ALL
+SELECT 7030500603,'O - Restaurant - General - Mobile - ALL - IT - IT _Location','Restaurant','General','Mobile','IT','IT','NonBrand','Google' UNION ALL
+SELECT 9547420998,'O - Restaurant - General - Desktop - ALL - US - EN _Location','Restaurant','General','Desktop','US','EN','NonBrand','Google' UNION ALL
+SELECT 7241927056,'O - Restaurant - General - Mobile - ALL - US - EN _Location','Restaurant','General','Mobile','US','EN','NonBrand','Google' ;
+
+SELECT account_id,account_name 
+from otpma.d_google_ads_account 
+where account_name IN (
+        'O - Restaurant - General - Desktop - ALL - US - EN _Location'
+        ,'O - Restaurant - General - Mobile - ALL - IT - IT _Location'
+        ,'O - Restaurant - General - Mobile - ALL - US - EN _Location')
+
+;
+
+SELECT * FROM otpma.d_adwords_account where account_id IN (5149418146	,
+6634822362	,
+9471819847	,
+8244676043	,
+2878238001	,
+3624078896	,
+6969810368	)
+
+with fact as
+(
+SELECT 
+account_id, 
+sum(clicks) clicks 
+FROM sem_dev.dhaslop_sem_results a 
+GROUP BY 1
+)
+
+SELECT * 
+FROM fact a
+LEFT JOIN sem_dev.dhaslop_account_categories b on a.account_id=b.account_id
+
+--questions
+
+--Why is revenue * 70% - is that cancellation assumption ?
+
+--LTV Script from Luke
+
+SELECT distinct category,sem_category FROM sem_dev.dhaslop_account_categories ORDER BY 1 asc
+
+
+--HIGHEST LEVEL
+        
+SELECT sum(payback_rev_usd_seated) payback_rev_usd_seated
+FROM pma.v_opentable_rev_comparison_1p
+WHERE date='2021-11-01' and payback_window=30
+GROUP BY 1
+
+--NEXT LEVEL
+
+SELECT
+cohort_date AS date,
+SUM(revenue_usd) AS revenue_usd,
+SUM(seated_revenue_usd) AS seated_revenue_usd,
+SUM(bookings) AS bookings
+FROM pma.f_opentable_last_touch_revenue WHERE cohort_date='2021-08-01' and payback_window=30
+GROUP BY 1
+
+--
+
+
+DROP TABLE IF EXISTS sem_dev.dhaslop_30d_revenue_history_detailed;
+CREATE TABLE sem_dev.dhaslop_30d_revenue_history_detailed AS
+
+SELECT
+   current_timestamp(1) as last_run
+  ,date
+  ,COALESCE(c.account_id,d.account_id,e.account_id,f.account_id) account_id
+  ,a.campaign_id
+  ,a.adgroup_id
+  ,a.keyword_id
+  ,a.platform as device
+  ,coalesce(count(1),0) bookings
+  ,sum(revenue_usd) gross_revenue_usd
+  ,coalesce(sum(revenue_usd * .7),0) nett_revenue_usd_estimate
+  ,coalesce(sum(revenue_usd * COALESCE((1-g.revenue_cancellation_perc),0.7)),0) nett_revenue_usd_estimate_adj
+  ,coalesce(sum(seated_revenue_usd),0) seated_revenue_usd
+  ,coalesce(sum(seated_booking),0) seated_bookings
+FROM
+(
+SELECT 
+*
+, CASE WHEN REGEXP_SUBSTR(landingpage, '^.*aid(=|%3D)([0-9]*\d{10,12})', 1, 1, '', 2) != '' THEN REGEXP_SUBSTR(landingpage, '^.*aid(=|%3D)([0-9]*\d{10,12})', 1, 1, '', 2)::INT ELSE NULL END AS adgroup_id 
+, CASE WHEN REGEXP_SUBSTR(landingpage, '^.*kwd-([0-9]*)', 1, 1, '', 1) != '' THEN REGEXP_SUBSTR(landingpage, '^.*kwd-([0-9]*)', 1, 1, '', 1)::INT ELSE NULL END AS keyword_id 
+, CASE 
+        WHEN landingpage ILIKE '%sp=ppc_g_%' THEN CASE WHEN REGEXP_SUBSTR(landingpage, '(&|\?)cmid=([0-9]*)', 1, 1, '', 2) != '' THEN REGEXP_SUBSTR(landingpage, '(&|\?)cmid=([0-9]*)', 1, 1, '', 2)::INT ELSE NULL END                
+        WHEN landingpage ILIKE '%sp=ppc_b_%' THEN CASE WHEN REGEXP_SUBSTR(landingpage, '(&|\?)cmpid=([0-9]*)', 1, 1, '', 2) != '' THEN REGEXP_SUBSTR(landingpage, '(&|\?)cmpid=([0-9]*)', 1, 1, '', 2)::INT ELSE NULL END
+  End as campaign_id
+, CASE WHEN REGEXP_SUBSTR(landingpage, '^.*ref=([0-9]*)', 1, 1, '', 1) != '' THEN REGEXP_SUBSTR(landingpage, '^.*ref=([0-9]*)', 1, 1, '', 1)::INT ELSE NULL END AS ref_id 
+,row_number() OVER (PARTITION BY datemade_utc, sessionid, rid, resid order by datediff(second, visitstarttime, datemade_timestamp_utc) ASC) attribution_priority
+FROM
+
+(SELECT 
+   c.anonymousid_match,
+   c.gpid_match,
+   c.date,
+   CASE WHEN c.platform ='web' THEN 'desktop' ELSE 'mobile' END as platform,
+   case 
+        when c.channel = 'paid search restaurants' THEN 'Paid Search - Restaurant'
+        when c.channel = 'paid search brand' THEN 'Paid Search - Brand'
+        when c.channel = 'paid search nonbrand' THEN 'Paid Search - Nonbrand' 
+        ELSE 'Paid Search - Nonbrand' 
+   END as channel,
+   c.country,
+   c.visitstarttime,
+   r.sessionid,
+   r.revenue_usd,
+   landingpage,
+   r.datemade_utc,
+   r.datemade_timestamp_utc,
+   r.rid,
+   r.resid,
+   r.shiftdate,
+   CASE WHEN isbillableorpending = 0 THEN 0 ELSE revenue_usd END seated_revenue_usd,
+   CASE WHEN isbillableorpending = 0 THEN 0 ELSE 1 END seated_booking
+   FROM pma.f_opentable_paid_sessions c
+   JOIN pma.f_opentable_fct_reservation r  ON c.anonymousid_match = r.anonymousid  AND datediff(second, c.visitstarttime, r.datemade_timestamp_utc) BETWEEN 0 and 60 * 60 * 24 * 30
+   WHERE (c.date>='2019-01-01')
+
+UNION ALL
+
+   SELECT 
+   c.anonymousid_match,
+   c.gpid_match,
+   c.date,
+   CASE WHEN c.platform ='web' THEN 'desktop' ELSE 'mobile' END as platform,
+   case 
+        when c.channel = 'paid search restaurants' THEN 'Paid Search - Restaurant'
+        when c.channel = 'paid search brand' THEN 'Paid Search - Brand'
+        when c.channel = 'paid search nonbrand' THEN 'Paid Search - Nonbrand' 
+        ELSE 'Paid Search - Nonbrand' 
+   END as channel,
+   c.country,
+   c.visitstarttime,
+   r.sessionid,
+   r.revenue_usd,
+   landingpage,
+   r.datemade_utc,
+   r.datemade_timestamp_utc,
+   r.rid,
+   r.resid,
+   r.shiftdate,
+   CASE WHEN isbillableorpending = 0 THEN 0 ELSE revenue_usd END seated_revenue_usd,
+   CASE WHEN isbillableorpending = 0 THEN 0 ELSE 1 END seated_booking
+   FROM pma.f_opentable_paid_sessions c
+   JOIN pma.f_opentable_fct_reservation r  ON c.gpid_match = r.gpid  AND datediff(second, c.visitstarttime, r.datemade_timestamp_utc) BETWEEN 0 and 60 * 60 * 24 * 30  AND c.gpid_match IS NOT NULL  AND r.gpid IS NOT NULL
+   WHERE (c.date>='2019-01-01')
+   ) a
+   ) a
+   LEFT JOIN otpma.d_adwords_adgroup c on c.adgroup_id=a.adgroup_id
+   LEFT JOIN otpma.d_bing_adgroup d on d.adgroup_id=a.adgroup_id
+   LEFT JOIN otpma.d_adwords_campaign e on e.campaign_id=a.campaign_id
+   LEFT JOIN otpma.d_bing_campaign f on f.campaign_id=a.campaign_id
+   LEFT JOIN sem_dev.dhaslop_cancel_check g on g.device=a.platform AND g.country=a.country AND g.session_channel=a.channel
+   WHERE attribution_priority = 1
+   GROUP BY 1,2,3,4,5,6,7;
+
+SELECT
+* FROM sem_dev.dhaslop_30d_revenue_history_detailed a
+WHERE date='2021-09-01' and account_id IS NULL and keyword_id IS NULL ORDER BY bookings DESC
+
+SELECT * from sem_dev.dhaslop_account_categories LIMIT 10
+
+SELECT * FROM 
+
+SELECT * FROM otpma.d_bing_adgroup where adgroup_id=119913976705
+
+-------
+
+
+  
+
+DROP TABLE IF EXISTS sem_dev.dhaslop_30d_revenue_history_detailed;
+CREATE TABLE sem_dev.dhaslop_30d_revenue_history_detailed AS
+
+SELECT
+   current_timestamp(1) as last_run
+  ,date
+  ,COALESCE(c.account_id,d.account_id,e.account_id,f.account_id) account_id
+  ,a.campaign_id
+  ,a.adgroup_id
+  ,a.keyword_id
+  ,a.platform as device
+  ,sessionid
+  ,coalesce(count(1),0) bookings
+  ,sum(revenue_usd) gross_revenue_usd
+  ,coalesce(sum(revenue_usd * .7),0) nett_revenue_usd_estimate
+  ,coalesce(sum(revenue_usd * COALESCE((1-g.revenue_cancellation_perc),0.7)),0) nett_revenue_usd_estimate_adj
+  ,coalesce(sum(seated_revenue_usd),0) seated_revenue_usd
+  ,coalesce(sum(seated_booking),0) seated_bookings
+FROM
+(
+SELECT 
+*
+, CASE WHEN REGEXP_SUBSTR(landingpage, '^.*aid(=|%3D)([0-9]*\d{10,12})', 1, 1, '', 2) != '' THEN REGEXP_SUBSTR(landingpage, '^.*aid(=|%3D)([0-9]*\d{10,12})', 1, 1, '', 2)::INT ELSE NULL END AS adgroup_id 
+, CASE WHEN REGEXP_SUBSTR(landingpage, '^.*kwd-([0-9]*)', 1, 1, '', 1) != '' THEN REGEXP_SUBSTR(landingpage, '^.*kwd-([0-9]*)', 1, 1, '', 1)::INT ELSE NULL END AS keyword_id 
+, CASE 
+        WHEN landingpage ILIKE '%sp=ppc_g_%' THEN CASE WHEN REGEXP_SUBSTR(landingpage, '(&|\?)cmid=([0-9]*)', 1, 1, '', 2) != '' THEN REGEXP_SUBSTR(landingpage, '(&|\?)cmid=([0-9]*)', 1, 1, '', 2)::INT ELSE NULL END                
+        WHEN landingpage ILIKE '%sp=ppc_b_%' THEN CASE WHEN REGEXP_SUBSTR(landingpage, '(&|\?)cmpid=([0-9]*)', 1, 1, '', 2) != '' THEN REGEXP_SUBSTR(landingpage, '(&|\?)cmpid=([0-9]*)', 1, 1, '', 2)::INT ELSE NULL END
+  End as campaign_id
+, CASE WHEN REGEXP_SUBSTR(landingpage, '^.*ref=([0-9]*)', 1, 1, '', 1) != '' THEN REGEXP_SUBSTR(landingpage, '^.*ref=([0-9]*)', 1, 1, '', 1)::INT ELSE NULL END AS ref_id 
+,row_number() OVER (PARTITION BY datemade_utc, sessionid, rid, resid order by datediff(second, visitstarttime, datemade_timestamp_utc) ASC) attribution_priority
+FROM
+
+(SELECT 
+   c.anonymousid_match,
+   c.gpid_match,
+   c.date,
+   CASE WHEN c.platform ='web' THEN 'desktop' ELSE 'mobile' END as platform,
+   case 
+        when c.channel = 'paid search restaurants' THEN 'Paid Search - Restaurant'
+        when c.channel = 'paid search brand' THEN 'Paid Search - Brand'
+        when c.channel = 'paid search nonbrand' THEN 'Paid Search - Nonbrand' 
+        ELSE 'Paid Search - Nonbrand' 
+   END as channel,
+   c.country,
+   c.visitstarttime,
+   r.sessionid,
+   r.revenue_usd,
+   CASE WHEN landingpage LIKE '%restaurantscmid%' THEN REPLACE(landingpage,'restaurantscmid','restaurants&cmid') ELSE landingpage END as landingpage,
+   r.datemade_utc,
+   r.datemade_timestamp_utc,
+   r.rid,
+   r.resid,
+   r.shiftdate,
+   CASE WHEN isbillableorpending = 0 THEN 0 ELSE revenue_usd END seated_revenue_usd,
+   CASE WHEN isbillableorpending = 0 THEN 0 ELSE 1 END seated_booking
+   FROM pma.f_opentable_paid_sessions c
+   JOIN pma.f_opentable_fct_reservation r  ON c.anonymousid_match = r.anonymousid  AND datediff(second, c.visitstarttime, r.datemade_timestamp_utc) BETWEEN 0 and 60 * 60 * 24 * 30
+   WHERE (c.date='2021-09-01')
+
+UNION ALL
+
+   SELECT 
+   c.anonymousid_match,
+   c.gpid_match,
+   c.date,
+   CASE WHEN c.platform ='web' THEN 'desktop' ELSE 'mobile' END as platform,
+   case 
+        when c.channel = 'paid search restaurants' THEN 'Paid Search - Restaurant'
+        when c.channel = 'paid search brand' THEN 'Paid Search - Brand'
+        when c.channel = 'paid search nonbrand' THEN 'Paid Search - Nonbrand' 
+        ELSE 'Paid Search - Nonbrand' 
+   END as channel,
+   c.country,
+   c.visitstarttime,
+   r.sessionid,
+   r.revenue_usd,
+   CASE WHEN landingpage LIKE '%restaurantscmid%' THEN REPLACE(landingpage,'restaurantscmid','restaurants&cmid') ELSE landingpage END as landingpage,
+   r.datemade_utc,
+   r.datemade_timestamp_utc,
+   r.rid,
+   r.resid,
+   r.shiftdate,
+   CASE WHEN isbillableorpending = 0 THEN 0 ELSE revenue_usd END seated_revenue_usd,
+   CASE WHEN isbillableorpending = 0 THEN 0 ELSE 1 END seated_booking
+   FROM pma.f_opentable_paid_sessions c
+   JOIN pma.f_opentable_fct_reservation r  ON c.gpid_match = r.gpid  AND datediff(second, c.visitstarttime, r.datemade_timestamp_utc) BETWEEN 0 and 60 * 60 * 24 * 30  AND c.gpid_match IS NOT NULL  AND r.gpid IS NOT NULL
+   WHERE (c.date='2021-09-01')
+   ) a
+   ) a
+   LEFT JOIN otpma.d_adwords_adgroup c on c.adgroup_id=a.adgroup_id
+   LEFT JOIN otpma.d_bing_adgroup d on d.adgroup_id=a.adgroup_id
+   LEFT JOIN otpma.d_adwords_campaign e on e.campaign_id=a.campaign_id
+   LEFT JOIN otpma.d_bing_campaign f on f.campaign_id=a.campaign_id
+   LEFT JOIN sem_dev.dhaslop_cancel_check g on g.device=a.platform AND g.country=a.country AND g.session_channel=a.channel
+   WHERE attribution_priority = 1
+   GROUP BY 1,2,3,4,5,6,7,8;
+
+SELECT * 
+FROM pma.f_opentable_paid_sessions
+WHERE accountid IS NULL and keywordid IS NULL
+AND date='2021-09-01'
+
+SELECT * FROM (
+SELECT 
+*
+, CASE WHEN REGEXP_SUBSTR(landingpage, '^.*aid(=|%3D)([0-9]*\d{10,12})', 1, 1, '', 2) != '' THEN REGEXP_SUBSTR(landingpage, '^.*aid(=|%3D)([0-9]*\d{10,12})', 1, 1, '', 2)::INT ELSE NULL END AS adgroup_id 
+, CASE WHEN REGEXP_SUBSTR(landingpage, '^.*kwd-([0-9]*)', 1, 1, '', 1) != '' THEN REGEXP_SUBSTR(landingpage, '^.*kwd-([0-9]*)', 1, 1, '', 1)::INT ELSE NULL END AS keyword_id 
+, CASE 
+        WHEN landingpage ILIKE '%sp=ppc_g_%' THEN CASE WHEN REGEXP_SUBSTR(landingpage, '(&|\?)cmid=([0-9]*)', 1, 1, '', 2) != '' THEN REGEXP_SUBSTR(landingpage, '(&|\?)cmid=([0-9]*)', 1, 1, '', 2)::INT ELSE NULL END                
+        WHEN landingpage ILIKE '%sp=ppc_b_%' THEN CASE WHEN REGEXP_SUBSTR(landingpage, '(&|\?)cmpid=([0-9]*)', 1, 1, '', 2) != '' THEN REGEXP_SUBSTR(landingpage, '(&|\?)cmpid=([0-9]*)', 1, 1, '', 2)::INT ELSE NULL END
+  End as campaign_id
+
+FROM pma.f_opentable_t_sessionstart a 
+WHERE sessionid='b03b06f2-94ed-4baa-9c6d-311680d760a8') ) a 
+ORDER BY landingpage ASC
+
+
+SELECT date,count(*) as sessions FROM pma.f_opentable_t_sessionstart a WHERE date>='2021-06-01' AND landingpage ILIKE '%https://www.opentable.com/experiences%' GROUP BY 1 ORDER  BY 1 DESC
+
+SELECT * FROM otpma.d_adwords_campaign where campaign_id = 12655051164
