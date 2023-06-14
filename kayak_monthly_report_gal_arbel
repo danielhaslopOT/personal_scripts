@@ -1,0 +1,61 @@
+-- change export settings: "Quote Text Value = None, Text Delimiter = , "
+
+with raw as 
+(SELECT
+  'KAYAK' as brand
+        ,date
+        ,date(date + INTERVAL '7 DAY' - DAYOFWEEK_ISO(date)) as week
+        ,date - (DAY(date)-1) as month
+  ,CASE
+     WHEN channel = 'hpa' THEN 'GHA'
+     ELSE 'Other'
+   END  as meta_partner
+  ,CASE
+     WHEN channel != 'search' THEN 'Other'
+     WHEN channel = 'search' and engine = 'adwords' THEN 'Google'
+     ELSE INITCAP(engine)
+   END  as search_partner
+  ,UPPER(locale) as booker_cc1
+  ,CASE 
+    WHEN channel = 'search' AND vertical = 'Brand' then 'ppc brand'
+    WHEN channel = 'search' AND vertical != 'Brand' then 'ppc non brand'
+    WHEN channel = 'hpa' then 'ShopPPC'
+    ELSE channel
+   End as channel
+  ,CASE
+  	WHEN device_type ='m' THEN 'mobile'
+  	WHEN device_type ='c' THEN 'desktop'
+  	WHEN device_type ='t' THEN 'mobile'
+  	ELSE device_type
+  END as device
+  ,SUM(ZEROIFNULL(clicks)) as clicks
+  ,SUM(ZEROIFNULL(cost_usd)) as cost_usd
+  ,SUM(0) gross_bookings
+  ,SUM(0) nits_bookings
+  ,SUM(0) as ab_bookings
+  ,sum(0) as gross_commission
+  ,SUM(0) as ab_commission
+  ,SUM(ZEROIFNULL(raw_revenue_usd)) as revenue_insession_usd
+  ,SUM(ZEROIFNULL(raw_revenue_usd))/SUM_FLOAT(ZEROIFNULL(cost_usd)) ROAS
+
+  FROM pma.f_summary_performance
+  
+  WHERE 1=1
+  AND date >= '2020-01-01' AND date <= '2023-06-01'  
+  AND CASE
+          WHEN LOWER(budget_type)='hotelscombined_performance' THEN 'performance'
+          ELSE "budget_type"
+      END IN ('performance')
+  AND channel IN ('hpa','search')
+  GROUP BY 1,2,3,4,5,6,7,8,9)
+  
+  SELECT * FROM raw WHERE
+  clicks > 0 OR
+  cost_usd > 0 OR
+  gross_bookings > 0 OR
+  nits_bookings > 0 OR
+  ab_bookings > 0 OR
+  gross_commission > 0 OR
+  ab_commission > 0 OR
+  revenue_insession_usd > 0 OR
+  ROAS > 0
