@@ -1,0 +1,61 @@
+-- generates two tables. 1) which emails to add to a negative lis, 2) which emails to remove from last weeks list>>> could be that we just replace the list each week and then we don't need that complexity. 
+-- script exists to stop spending on known diner traffic that have have an open booking. 
+-- future iterations should also include those with a soon to be upcoming bookings as we know that contaact is made either < 1 day of booking being made of <1 day of booking checkin date. The rest is not needed to upload. 
+
+
+
+--generate new table with current data
+
+DROP TABLE if EXISTS updated_b2b_customer_match_negative_list;
+CREATE TABLE updated_b2b_customer_match_negative_list AS   
+   
+    
+    SELECT distinct email as email
+    FROM 
+    
+        (
+            SELECT a.userweb_id,count(1) as entries
+            FROM analytics..fct_reservation a
+            WHERE isbillableorpending=1 AND shiftdate >= current_date()  --- 
+            GROUP BY 1 
+            ORDER BY 2 DESC 
+        )a 
+    
+    JOIN analytics..dm_userweb b on a.userweb_id=b.userweb_id
+
+    ;
+
+    -- find all email addresses present in new table but not present in old table
+DROP TABLE if EXISTS added_emails;
+CREATE TABLE added_emails AS
+
+    SELECT a.email, SHA2(a.email) hashed_email
+    FROM updated_b2b_customer_match_negative_list a
+    FULL OUTER JOIN live_b2b_customer_match_negative_list b 
+        ON a.email=b.email
+    WHERE b.email is null
+    ;
+
+    -- find all email addresses present in old table but not present in new table
+DROP TABLE if EXISTS removed_emails;
+CREATE TABLE removed_emails AS
+    
+    SELECT b.email, SHA2(b.email) hashed_email
+    FROM updated_b2b_customer_match_negative_list a
+    FULL OUTER JOIN live_b2b_customer_match_negative_list b 
+        ON a.email=b.email
+    WHERE a.email is null
+    
+    ;
+-- drop old table, rename new table as LIVE data to prep for next process 
+
+DROP TABLE if EXISTS live_b2b_customer_match_negative_list;
+CREATE TABLE live_b2b_customer_match_negative_list as 
+    SELECT * FROM updated_b2b_customer_match_negative_list;
+
+
+ --export added
+ 
+ SELECT hashed_email FROM removed_emails; -- export to .csv
+ SELECT hashed_email FROM added_emails; -- export to .csv
+    
