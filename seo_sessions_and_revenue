@@ -1,22 +1,3 @@
-create table dhasop_manualcities 
-
-(
-
-url string, 
-pagetype string,
-subpage_type string
-
-);
-
-
-
-INSERT into dhasop_manualcities 
-
-(''),
-(''),
-('');
-
-
 drop view if exists stg_seo_translation_view;
 create view
 stg_seo_translation_view AS
