@@ -1,11 +1,33 @@
+create table dhasop_manualcities 
 
--- create subset of url to pagetype , in order to reduce distinct joins needed in the subsequent query
+(
+
+url string, 
+pagetype string,
+subpage_type string
+
+);
 
 
+
+INSERT into dhasop_manualcities 
+
+(''),
+(''),
+('');
+
+
+drop view if exists stg_seo_translation_view;
 create view
 stg_seo_translation_view AS
 
-SELECT url,pagetype,subpage_type,rank FROM 
+SELECT 
+url,
+pagetype,
+subpage_type,
+rank
+
+FROM 
 (
 SELECT
 url,pagetype,subpage_type,value,ROW_NUMBER() OVER (PARTITION BY url ORDER BY value desc, subpage_type asc) rank
@@ -20,18 +42,64 @@ GROUP BY 1,2,3
 ) a
 WHERE rank=1
 
+
 ;
 
---generate table that combines sessions + revenue data
 
-DROP VIEW if exists seo_analytics_page_performance;
-CREATE VIEW seo_analytics_page_performance as
+--filtering by mktng_acq_src=SEO. in addition to filter by url choice. because of billingtype and restref.
+
+DROP TABLE if exists seo_analytics_page_performance;
+CREATE TABLE seo_analytics_page_performance as
+
+SELECT 
+
+*,COALESCE(CASE 
+        WHEN pagetype IS NULL AND landingpage LIKE '%promo.aspx%' THEN 'seasonal-event'
+        WHEN pagetype IS NULL AND landingpage LIKE '%restaurantweek%' THEN 'seasonal-event'
+        WHEN pagetype IS NULL AND landingpage LIKE '%/start/home' THEN 'home'
+        WHEN pagetype IS NULL AND landingpage LIKE '%/my/concierge' THEN 'concierge'
+        WHEN pagetype IS NULL AND landingpage LIKE '%%authenticate/concierge' THEN 'concierge'
+        WHEN pagetype IS NULL AND landingpage LIKE '%/my/login' THEN 'login'
+        WHEN pagetype IS NULL AND landingpage LIKE '%/user/login' THEN 'login'
+        WHEN pagetype IS NULL AND landingpage LIKE '%/restaurant/profile/%' THEN 'restaurant-profile'
+        WHEN pagetype IS NULL AND landingpage LIKE '%/r/%' THEN 'restaurant-profile'
+        WHEN pagetype IS NULL AND landingpage LIKE '%start/geo/?%' THEN 'location'
+        WHEN pagetype IS NULL AND landingpage LIKE '%start/geo?%' THEN 'location'
+        WHEN pagetype IS NULL AND landingpage LIKE '%/fl/%' and landingpage LIKE '%restaurants%' THEN 'location'
+        WHEN pagetype IS NULL AND landingpage LIKE '%/m/mobile-apps/%' THEN 'mobile-app-download'
+        WHEN pagetype IS NULL AND landingpage LIKE '%/dinerschoice?%' THEN 'diners-choice'
+        WHEN pagetype IS NULL AND landingpage LIKE '%restref%' THEN 'restref-widget'
+        WHEN pagetype IS NULL AND landingpage LIKE '%/start/?m%' THEN 'location'
+        WHEN pagetype IS NULL AND landingpage LIKE '%/c/%' THEN 'location'
+        WHEN pagetype IS NULL AND landingpage LIKE '%legal/terms-and-conditions' THEN 'terms-and-conditions'
+        WHEN pagetype IS NULL AND landingpage LIKE '%/about/' THEN 'terms-and-conditions'
+        WHEN pagetype IS NULL AND landingpage LIKE '%/landmark/%' THEN 'poi'
+        WHEN pagetype IS NULL AND landingpage LIKE '%/restaurant/takeout/%' THEN 'delivery'
+        WHEN pagetype IS NULL AND landingpage LIKE '%/cuisine/%' THEN 'cuisines'
+        WHEN pagetype IS NULL AND 
+                landingpage LIKE '%.jp/?lang=%' OR
+                landingpage LIKE '%.com/?lang=%' OR
+                landingpage LIKE '%.it/?lang=%' OR
+                landingpage LIKE '%.es/?lang=%' OR
+                landingpage LIKE '%.nl/?lang=%' OR
+                landingpage LIKE '%.co.uk/?lang=%' OR
+                landingpage LIKE '%.com.mx/?lang=%' OR
+                landingpage LIKE '%.com.au/?lang=%' OR
+                landingpage LIKE '%.de/?lang=%' OR
+                landingpage LIKE '%.ca/?lang=%' OR
+                landingpage LIKE '%.ie/?lang=%' OR
+                landingpage LIKE '%.it/?lang=%' 
+         THEN 'home'
+         ELSE pagetype END ,'restaurant-profile') as pagetype_amended 
+
+FROM 
+(
 SELECT 
 date(timestamp) date
 ,REPLACE(CONCAT(LEFT(landingpage,regexp_instr(landingpage,'/',9)-1),'/'),'http:','https:') as domain
 ,pagetype
-,case when pagetype IN ('poi','location') THEN 'location' else pagetype END as pagetype_amended
 ,subpage_type
+,landingpage
 ,case 
     when landingpage LIKE '%opentable.com.mx%' THEN 'MX'
     when landingpage LIKE '%opentable.com.au%' THEN 'AU'
@@ -56,9 +124,9 @@ when landingpage LIKE '%opentable.ie/' THEN 'Brand'
 ELSE 'nonbrand'
 END as brand_nonbrand
 ,count(distinct a.sessionid) as sessions
-,count(distinct res_id) as bookgs
-,sum(billablesize) as covers
-,sum(transaction_revenue_usd) as revenue_usd
+,sum(case when mktng_acq_src='SEO' then 1 else 0 END) as bookings
+,sum(case when mktng_acq_src='SEO' then billablesize else 0 END) as covers
+,sum(case when mktng_acq_src='SEO' then transaction_revenue_usd else 0 END) as revenue
 
 FROM deg..t_sessionstart_interaction_web a
 LEFT JOIN stg_seo_translation_view  c on c.url= CONCAT('/',RIGHT(landingpage,length(landingpage)-regexp_instr(landingpage,'/',9)))
@@ -74,13 +142,13 @@ WHERE date(timestamp) >= '2019-01-01'
     and app_name != 'OpenTable' 
     and platform in ('mobile-web','web')
     
-GROUP BY 1,2,3,4,5,6,7 
+GROUP BY 1,2,3,4,5,6,7) a
 
 ;
 
---detailed export
 SELECT 
 to_date(dateadd(day,date_part(weekday,date)*-1+7,date)) as week
+, add_months(last_day(date)+1,-1) as month
 , domain
 , pagetype
 , pagetype_amended
@@ -88,15 +156,14 @@ to_date(dateadd(day,date_part(weekday,date)*-1+7,date)) as week
 , country
 , brand_nonbrand
 , sum(sessions) sessions
-, sum(bookgs) bookings
-, sum(covers) covers
-, sum(revenue_usd) revenue_usd
+, sum(bookings) bookings
+, sum(billablesize) covers
+, sum(transaction_revenue_usd) revenue_usd
 
 FROM seo_analytics_page_performance
-GROUP BY 1,2,3,4,5,6,7
+GROUP BY 1,2,3,4,5,6,7,8
 ORDER BY 1 desc
 
---simple export
 ;
 SELECT 
 to_date(dateadd(day,date_part(weekday,date)*-1+7,date)) as week
@@ -110,6 +177,4 @@ to_date(dateadd(day,date_part(weekday,date)*-1+7,date)) as week
 FROM seo_analytics_page_performance
 GROUP BY 1,2,3
 ORDER BY 1 desc
-
-;;
 
